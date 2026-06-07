@@ -1,0 +1,2 @@
+# Place the prebuilt lightpool binary here as `lightpool`.
+# CI or release packaging copies the artifact from the main lightpool workspace build.

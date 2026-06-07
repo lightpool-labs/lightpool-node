@@ -1,0 +1,12 @@
+[package]
+name = "lightpool"
+version = "0.1.0"
+edition = "2021"
+authors = ["LightPool Team"]
+description = "LightPool command line interface"
+
+[[bin]]
+name = "lightpool"
+path = "src/main.rs"
+
+[build-dependencies]

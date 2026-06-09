@@ -2,6 +2,8 @@
 
 High-Frequency Trading Infrastructure Powered by a Layer 1 Blockchain
 
+This project is intended for educational and research purposes only. It is not intended for production deployment, live trading, or commercial use.
+
 ## Build
 
 From this directory:

@@ -4,6 +4,22 @@ High-Frequency Trading Infrastructure Powered by a Layer 1 Blockchain
 
 This project is intended for educational and research purposes only. It is not intended for production deployment, live trading, or commercial use.
 
+## Setup
+
+Place the prebuilt release archive in `bin/`. The archive name changes on each release, for example:
+
+```text
+bin/lightpool-v0.1.1-linux-amd64-9810608.tar.gz
+```
+
+Extract the `lightpool` binary before building:
+
+```shell
+bash scripts/extract-binary.sh
+```
+
+This picks the newest `bin/lightpool-v*.tar.gz`, unpacks it, and installs the binary as `bin/lightpool`.
+
 ## Build
 
 From this directory:

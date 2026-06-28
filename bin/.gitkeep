@@ -1,2 +1,2 @@
 # Place release archives here as lightpool-v*.tar.gz.
-# Run `bash scripts/extract-binary.sh` to install bin/lightpool before building.
+# `cargo build --release` extracts the newest archive to bin/lightpool automatically.

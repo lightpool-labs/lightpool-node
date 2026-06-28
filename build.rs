@@ -1,12 +1,27 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::time::SystemTime;
+
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 
 fn main() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
-    let binary_path = Path::new(&manifest_dir).join("bin/lightpool");
+    let manifest_path = Path::new(&manifest_dir);
+    let bin_dir = manifest_path.join("bin");
+    let binary_path = bin_dir.join("lightpool");
 
-    println!("cargo:rerun-if-changed=bin/lightpool");
+    register_rerun_paths(&bin_dir);
+
+    let profile = env::var("PROFILE").unwrap_or_default();
+    if profile == "release" && !binary_path.exists() {
+        if let Err(err) = extract_binary_from_archive(&bin_dir, &binary_path) {
+            println!("cargo:warning={err}");
+        }
+    }
+
     println!(
         "cargo:rustc-env=LIGHTPOOL_BIN_PATH={}",
         binary_path.display()
@@ -14,7 +29,7 @@ fn main() {
 
     if !binary_path.exists() {
         println!(
-            "cargo:warning=bin/lightpool not found; build the launcher only and provide the binary before running"
+            "cargo:warning=bin/lightpool not found; place lightpool-v*.tar.gz in bin/ and run cargo build --release"
         );
         return;
     }
@@ -27,6 +42,131 @@ fn main() {
         let profile_dest = profile_dir.join("lightpool-bin");
         copy_binary(&binary_path, &profile_dest);
     }
+}
+
+fn register_rerun_paths(bin_dir: &Path) {
+    println!("cargo:rerun-if-changed=bin");
+    println!("cargo:rerun-if-env-changed=PROFILE");
+
+    let entries = match fs::read_dir(bin_dir) {
+        Ok(entries) => entries,
+        Err(_) => return,
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if is_release_archive(&path) {
+            println!("cargo:rerun-if-changed={}", path.display());
+        }
+    }
+}
+
+fn is_release_archive(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .map(|name| name.starts_with("lightpool-v") && name.ends_with(".tar.gz"))
+        .unwrap_or(false)
+}
+
+fn extract_binary_from_archive(bin_dir: &Path, dest: &Path) -> Result<(), String> {
+    let archive = find_newest_archive(bin_dir)?;
+    let tmp = env::temp_dir().join(format!("lightpool-extract-{}", std::process::id()));
+
+    if tmp.exists() {
+        fs::remove_dir_all(&tmp).map_err(|err| err.to_string())?;
+    }
+    fs::create_dir_all(&tmp).map_err(|err| err.to_string())?;
+
+    let extract_result = (|| -> Result<(), String> {
+        let status = Command::new("tar")
+            .arg("-xzf")
+            .arg(&archive)
+            .arg("-C")
+            .arg(&tmp)
+            .status()
+            .map_err(|err| format!("failed to run tar: {err}"))?;
+
+        if !status.success() {
+            return Err(format!("tar extraction failed for {}", archive.display()));
+        }
+
+        let extracted = find_lightpool_binary(&tmp)?;
+        if let Some(parent) = dest.parent() {
+            fs::create_dir_all(parent).map_err(|err| err.to_string())?;
+        }
+        fs::copy(&extracted, dest).map_err(|err| err.to_string())?;
+
+        #[cfg(unix)]
+        {
+            let mut perms = fs::metadata(dest).map_err(|err| err.to_string())?.permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(dest, perms).map_err(|err| err.to_string())?;
+        }
+
+        println!(
+            "cargo:warning=Extracted {} -> {}",
+            archive.display(),
+            dest.display()
+        );
+        Ok(())
+    })();
+
+    let _ = fs::remove_dir_all(&tmp);
+    extract_result
+}
+
+fn find_newest_archive(bin_dir: &Path) -> Result<PathBuf, String> {
+    let mut archives: Vec<(SystemTime, PathBuf)> = fs::read_dir(bin_dir)
+        .map_err(|err| err.to_string())?
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .filter(|path| is_release_archive(path))
+        .filter_map(|path| {
+            let modified = fs::metadata(&path)
+                .and_then(|metadata| metadata.modified())
+                .unwrap_or(SystemTime::UNIX_EPOCH);
+            Some((modified, path))
+        })
+        .collect();
+
+    if archives.is_empty() {
+        return Err(format!(
+            "no lightpool-v*.tar.gz found in {}",
+            bin_dir.display()
+        ));
+    }
+
+    archives.sort_by_key(|(modified, _)| *modified);
+    Ok(archives.pop().expect("checked non-empty").1)
+}
+
+fn find_lightpool_binary(root: &Path) -> Result<PathBuf, String> {
+    fn walk(dir: &Path) -> Option<PathBuf> {
+        let entries = fs::read_dir(dir).ok()?;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                if path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with('.'))
+                {
+                    continue;
+                }
+                if let Some(found) = walk(&path) {
+                    return Some(found);
+                }
+                continue;
+            }
+
+            if path.file_name().and_then(|name| name.to_str()) == Some("lightpool") {
+                return Some(path);
+            }
+        }
+        None
+    }
+
+    walk(root).ok_or_else(|| "lightpool binary not found inside archive".to_string())
 }
 
 fn copy_binary(src: &Path, dest: &Path) {

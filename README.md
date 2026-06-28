@@ -91,9 +91,6 @@ Listening addresses:
 
 | | node0 | node1 |
 | --- | --- | --- |
-| front | localhost:26000 | localhost:27000 |
-| mempool | localhost:26100 | localhost:27100 |
-| consensus | localhost:26200 | localhost:27200 |
 | rpc | localhost:26300 | localhost:27300 |
 | ws | localhost:26400 | localhost:27400 |
 

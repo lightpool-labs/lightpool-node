@@ -1,2 +1,5 @@
-# Place release archives here as lightpool-v*.tar.gz.
-# `cargo build --release` extracts the newest archive to bin/lightpool automatically.
+# Place release archives here:
+# - lightpool-v*.tar.gz
+# - lightpool-cli-v*.tar.gz
+#
+# `cargo build --release` extracts both archives into this directory.

@@ -35,7 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--build",
         action="store_true",
-        help="Build lightpool-cli and install bin/lightpool before starting nodes.",
+        help="Run cargo build --release to extract node and CLI binaries before starting nodes.",
     )
     parser.add_argument(
         "--clean",

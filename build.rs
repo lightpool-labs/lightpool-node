@@ -11,23 +11,42 @@ fn main() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR");
     let manifest_path = Path::new(&manifest_dir);
     let bin_dir = manifest_path.join("bin");
-    let binary_path = bin_dir.join("lightpool");
+    let node_binary_path = bin_dir.join("lightpool");
+    let cli_binary_path = bin_dir.join("lightpool-cli");
 
     register_rerun_paths(&bin_dir);
 
     let profile = env::var("PROFILE").unwrap_or_default();
-    if profile == "release" && !binary_path.exists() {
-        if let Err(err) = extract_binary_from_archive(&bin_dir, &binary_path) {
-            println!("cargo:warning={err}");
+    if profile == "release" {
+        if !node_binary_path.exists() {
+            if let Err(err) = extract_binary_from_archive(
+                &bin_dir,
+                "lightpool-v",
+                "lightpool",
+                &node_binary_path,
+            ) {
+                println!("cargo:warning={err}");
+            }
+        }
+
+        if !cli_binary_path.exists() {
+            if let Err(err) = extract_binary_from_archive(
+                &bin_dir,
+                "lightpool-cli-v",
+                "lightpool-cli",
+                &cli_binary_path,
+            ) {
+                println!("cargo:warning={err}");
+            }
         }
     }
 
     println!(
         "cargo:rustc-env=LIGHTPOOL_BIN_PATH={}",
-        binary_path.display()
+        node_binary_path.display()
     );
 
-    if !binary_path.exists() {
+    if !node_binary_path.exists() {
         println!(
             "cargo:warning=bin/lightpool not found; place lightpool-v*.tar.gz in bin/ and run cargo build --release"
         );
@@ -36,11 +55,11 @@ fn main() {
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
     let bundled_dest = out_dir.join("lightpool-bin");
-    copy_binary(&binary_path, &bundled_dest);
+    copy_binary(&node_binary_path, &bundled_dest);
 
     if let Some(profile_dir) = out_dir.ancestors().nth(3) {
         let profile_dest = profile_dir.join("lightpool-bin");
-        copy_binary(&binary_path, &profile_dest);
+        copy_binary(&node_binary_path, &profile_dest);
     }
 }
 
@@ -64,13 +83,25 @@ fn register_rerun_paths(bin_dir: &Path) {
 fn is_release_archive(path: &Path) -> bool {
     path.file_name()
         .and_then(|name| name.to_str())
-        .map(|name| name.starts_with("lightpool-v") && name.ends_with(".tar.gz"))
+        .map(|name| {
+            (name.starts_with("lightpool-v") || name.starts_with("lightpool-cli-v"))
+                && name.ends_with(".tar.gz")
+        })
         .unwrap_or(false)
 }
 
-fn extract_binary_from_archive(bin_dir: &Path, dest: &Path) -> Result<(), String> {
-    let archive = find_newest_archive(bin_dir)?;
-    let tmp = env::temp_dir().join(format!("lightpool-extract-{}", std::process::id()));
+fn extract_binary_from_archive(
+    bin_dir: &Path,
+    archive_prefix: &str,
+    binary_name: &str,
+    dest: &Path,
+) -> Result<(), String> {
+    let archive = find_newest_archive(bin_dir, archive_prefix)?;
+    let tmp = env::temp_dir().join(format!(
+        "lightpool-extract-{}-{}",
+        binary_name,
+        std::process::id()
+    ));
 
     if tmp.exists() {
         fs::remove_dir_all(&tmp).map_err(|err| err.to_string())?;
@@ -90,7 +121,7 @@ fn extract_binary_from_archive(bin_dir: &Path, dest: &Path) -> Result<(), String
             return Err(format!("tar extraction failed for {}", archive.display()));
         }
 
-        let extracted = find_lightpool_binary(&tmp)?;
+        let extracted = find_named_binary(&tmp, binary_name)?;
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent).map_err(|err| err.to_string())?;
         }
@@ -115,12 +146,16 @@ fn extract_binary_from_archive(bin_dir: &Path, dest: &Path) -> Result<(), String
     extract_result
 }
 
-fn find_newest_archive(bin_dir: &Path) -> Result<PathBuf, String> {
+fn find_newest_archive(bin_dir: &Path, prefix: &str) -> Result<PathBuf, String> {
     let mut archives: Vec<(SystemTime, PathBuf)> = fs::read_dir(bin_dir)
         .map_err(|err| err.to_string())?
         .filter_map(|entry| entry.ok())
         .map(|entry| entry.path())
-        .filter(|path| is_release_archive(path))
+        .filter(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with(prefix) && name.ends_with(".tar.gz"))
+        })
         .filter_map(|path| {
             let modified = fs::metadata(&path)
                 .and_then(|metadata| metadata.modified())
@@ -131,7 +166,7 @@ fn find_newest_archive(bin_dir: &Path) -> Result<PathBuf, String> {
 
     if archives.is_empty() {
         return Err(format!(
-            "no lightpool-v*.tar.gz found in {}",
+            "no {prefix}*.tar.gz found in {}",
             bin_dir.display()
         ));
     }
@@ -140,8 +175,8 @@ fn find_newest_archive(bin_dir: &Path) -> Result<PathBuf, String> {
     Ok(archives.pop().expect("checked non-empty").1)
 }
 
-fn find_lightpool_binary(root: &Path) -> Result<PathBuf, String> {
-    fn walk(dir: &Path) -> Option<PathBuf> {
+fn find_named_binary(root: &Path, binary_name: &str) -> Result<PathBuf, String> {
+    fn walk(dir: &Path, binary_name: &str) -> Option<PathBuf> {
         let entries = fs::read_dir(dir).ok()?;
         for entry in entries.flatten() {
             let path = entry.path();
@@ -153,20 +188,21 @@ fn find_lightpool_binary(root: &Path) -> Result<PathBuf, String> {
                 {
                     continue;
                 }
-                if let Some(found) = walk(&path) {
+                if let Some(found) = walk(&path, binary_name) {
                     return Some(found);
                 }
                 continue;
             }
 
-            if path.file_name().and_then(|name| name.to_str()) == Some("lightpool") {
+            if path.file_name().and_then(|name| name.to_str()) == Some(binary_name) {
                 return Some(path);
             }
         }
         None
     }
 
-    walk(root).ok_or_else(|| "lightpool binary not found inside archive".to_string())
+    walk(root, binary_name)
+        .ok_or_else(|| format!("{binary_name} binary not found inside archive"))
 }
 
 fn copy_binary(src: &Path, dest: &Path) {

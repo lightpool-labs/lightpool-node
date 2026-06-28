@@ -4,8 +4,7 @@ import os
 from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
-CRATE_DIR = SCRIPTS_DIR.parent
-WORKSPACE_ROOT = CRATE_DIR.parent.parent
+PROJECT_ROOT = SCRIPTS_DIR.parent
 
 NODE_COUNT = 2
 PORT_STEP = 1000
@@ -23,10 +22,15 @@ DATA_DIR = Path(
 
 LIGHTPOOL_BIN = os.environ.get(
     "LIGHTPOOL_BIN",
-    str(WORKSPACE_ROOT / "target" / "release" / "lightpool"),
+    str(PROJECT_ROOT / "bin" / "lightpool"),
 )
 
 LIGHTPOOL_CLI = os.environ.get(
     "LIGHTPOOL_CLI",
-    str(WORKSPACE_ROOT / "target" / "release" / "lightpool-cli"),
+    str(PROJECT_ROOT / "bin" / "lightpool-cli"),
+)
+
+LAUNCHER_BIN = os.environ.get(
+    "LIGHTPOOL_LAUNCHER_BIN",
+    str(PROJECT_ROOT / "target" / "release" / "lightpool"),
 )

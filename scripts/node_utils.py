@@ -17,7 +17,6 @@ from config import (
     BASE_RPC_PORT,
     BASE_WS_PORT,
     LIGHTPOOL_BIN,
-    LIGHTPOOL_SOURCE_ROOT,
     PORT_STEP,
     PROJECT_ROOT,
 )
@@ -57,38 +56,24 @@ def resolve_lightpool_binary() -> str:
 
 
 def build_binaries() -> None:
-    cli_cmd = [
-        "cargo",
-        "build",
-        "--release",
-        "-p",
-        "lightpool-cli",
-        "--manifest-path",
-        str(LIGHTPOOL_SOURCE_ROOT / "Cargo.toml"),
-    ]
-    print(f"+ {' '.join(cli_cmd)}", flush=True)
-    subprocess.run(cli_cmd, check=True, cwd=LIGHTPOOL_SOURCE_ROOT)
-
     launcher_cmd = ["cargo", "build", "--release"]
     print(f"+ {' '.join(launcher_cmd)}", flush=True)
     subprocess.run(launcher_cmd, check=True, cwd=PROJECT_ROOT)
 
     bin_path = PROJECT_ROOT / "bin" / "lightpool"
-    if bin_path.is_file():
-        return
-
-    source_bin = LIGHTPOOL_SOURCE_ROOT / "target" / "release" / "lightpool"
-    if source_bin.is_file():
-        bin_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source_bin, bin_path)
-        bin_path.chmod(0o755)
-        print(f"Installed {source_bin} -> {bin_path}", flush=True)
-        return
-
-    raise FileNotFoundError(
-        "lightpool binary not found. Place lightpool-v*.tar.gz in bin/ and run "
-        "'cargo build --release', or set LIGHTPOOL_BIN."
-    )
+    cli_path = PROJECT_ROOT / "bin" / "lightpool-cli"
+    missing = [
+        path
+        for path in (bin_path, cli_path)
+        if not path.is_file()
+    ]
+    if missing:
+        missing_list = ", ".join(str(path) for path in missing)
+        raise FileNotFoundError(
+            "Missing binaries after build: "
+            f"{missing_list}. Place lightpool-v*.tar.gz and "
+            "lightpool-cli-v*.tar.gz in bin/ and run 'cargo build --release'."
+        )
 
 
 def node_ports(index: int) -> tuple[int, int, int, int, int]:

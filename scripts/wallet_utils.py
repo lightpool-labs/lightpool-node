@@ -61,8 +61,8 @@ def resolve_cli_binary() -> str:
     if candidates:
         return candidates[0]
     raise FileNotFoundError(
-        "lightpool-cli not found. Build it with "
-        "'cargo build --release -p lightpool-cli' or set LIGHTPOOL_CLI."
+        "lightpool-cli not found. Run 'cargo build --release' in lightpool-node "
+        "or set LIGHTPOOL_CLI."
     )
 
 

@@ -24,8 +24,6 @@ lightpool-cli create-wallet --force
 lightpool-cli address
 ```
 
-Save a recipient `Address` for the transfer step.
-
 ### 2. Run the node
 
 In one terminal:
@@ -52,14 +50,21 @@ Copy the token contract address from the command output.
 
 ### 4. Transfer tokens
 
-Replace `TOKEN_ADDRESS` and `RECIPIENT_ADDRESS`:
+Create a recipient wallet and transfer tokens:
 
 ```shell
+mkdir -p data/recipient
+
+lightpool-cli create-wallet --force --wallet-path data/recipient/wallet.json
+lightpool-cli address --wallet-path data/recipient/wallet.json
+
 lightpool-cli transfer \
   --token-address "TOKEN_ADDRESS" \
   --to "RECIPIENT_ADDRESS" \
   --amount "100"
 ```
+
+Replace `TOKEN_ADDRESS` and `RECIPIENT_ADDRESS` from the command output.
 
 Check balances:
 
@@ -82,12 +87,21 @@ Use `scripts/run_two_nodes.py` to start two validators that share one bootstrap 
 python3 scripts/run_two_nodes.py --clean
 ```
 
+Listening addresses:
+
+| | node0 | node1 |
+| --- | --- | --- |
+| front | localhost:26000 | localhost:27000 |
+| mempool | localhost:26100 | localhost:27100 |
+| consensus | localhost:26200 | localhost:27200 |
+| rpc | localhost:26300 | localhost:27300 |
+| ws | localhost:26400 | localhost:27400 |
+
 Useful options:
 
 ```shell
 python3 scripts/run_two_nodes.py --clean --verbose
 python3 scripts/run_two_nodes.py --data-dir ./scripts/.local-network
-python3 scripts/run_two_nodes.py --no-wait
 ```
 
 Press Ctrl+C to stop all nodes.
@@ -101,14 +115,3 @@ lightpool-cli create-token \
   --total-supply "1000000" \
   --mintable
 ```
-
-## Scripts
-
-| Path | Purpose |
-|------|---------|
-| `scripts/run_two_nodes.py` | Start a local two-validator network |
-| `scripts/config.py` | Shared ports, paths, and binary locations |
-| `scripts/node_utils.py` | Node startup and health checks |
-| `scripts/wallet_utils.py` | Wallet creation helpers for local scripts |
-
-Local network data is written under `scripts/.local-network/` by default.

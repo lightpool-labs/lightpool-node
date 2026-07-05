@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import os
 import shutil
-import signal
 import socket
-import subprocess
 import sys
 import time
 from dataclasses import dataclass
@@ -18,7 +15,6 @@ from config import (
     BASE_WS_PORT,
     LIGHTPOOL_BIN,
     PORT_STEP,
-    PROJECT_ROOT,
 )
 
 
@@ -27,13 +23,14 @@ class NodeSpec:
     index: int
     wallet_path: Path
     store_path: Path
-    validators_path: Path
+    validator_path: Path
     log_path: Path
     front_port: int
     rpc_port: int
     ws_port: int
     mempool_port: int
     consensus_port: int
+    boot_peer: str | None = None
 
 
 def resolve_lightpool_binary() -> str:
@@ -50,30 +47,9 @@ def resolve_lightpool_binary() -> str:
         return found
 
     raise FileNotFoundError(
-        "lightpool not found. Run 'cargo build --release' in lightpool-node, "
-        "set LIGHTPOOL_BIN, or place the binary at bin/lightpool."
+        "lightpool not found. Run 'cargo build --release' in lightpool-node "
+        "or set LIGHTPOOL_BIN."
     )
-
-
-def build_binaries() -> None:
-    launcher_cmd = ["cargo", "build", "--release"]
-    print(f"+ {' '.join(launcher_cmd)}", flush=True)
-    subprocess.run(launcher_cmd, check=True, cwd=PROJECT_ROOT)
-
-    bin_path = PROJECT_ROOT / "bin" / "lightpool"
-    cli_path = PROJECT_ROOT / "bin" / "lightpool-cli"
-    missing = [
-        path
-        for path in (bin_path, cli_path)
-        if not path.is_file()
-    ]
-    if missing:
-        missing_list = ", ".join(str(path) for path in missing)
-        raise FileNotFoundError(
-            "Missing binaries after build: "
-            f"{missing_list}. Place lightpool-v*.tar.gz and "
-            "lightpool-cli-v*.tar.gz in bin/ and run 'cargo build --release'."
-        )
 
 
 def node_ports(index: int) -> tuple[int, int, int, int, int]:
@@ -90,7 +66,8 @@ def node_ports(index: int) -> tuple[int, int, int, int, int]:
 def build_node_spec(
     index: int,
     data_dir: Path,
-    validators_path: Path,
+    *,
+    boot_peer: str | None = None,
 ) -> NodeSpec:
     node_dir = data_dir / f"node{index}"
     front_port, rpc_port, ws_port, mempool_port, consensus_port = node_ports(index)
@@ -98,45 +75,14 @@ def build_node_spec(
         index=index,
         wallet_path=node_dir / "wallet.json",
         store_path=node_dir / "store",
-        validators_path=validators_path,
+        validator_path=node_dir / "validator.json",
         log_path=node_dir / "lightpool.log",
         front_port=front_port,
         rpc_port=rpc_port,
         ws_port=ws_port,
         mempool_port=mempool_port,
         consensus_port=consensus_port,
-    )
-
-
-def start_node(spec: NodeSpec, *, verbose: bool = False) -> subprocess.Popen[bytes]:
-    spec.store_path.mkdir(parents=True, exist_ok=True)
-    spec.log_path.parent.mkdir(parents=True, exist_ok=True)
-
-    cmd = [
-        resolve_lightpool_binary(),
-        "--wallet",
-        str(spec.wallet_path),
-        "--store",
-        str(spec.store_path),
-        "--validators",
-        str(spec.validators_path),
-        "--front-listen-addr",
-        f"0.0.0.0:{spec.front_port}",
-        "--rpc-listen-addr",
-        f"0.0.0.0:{spec.rpc_port}",
-        "--ws-listen-addr",
-        f"0.0.0.0:{spec.ws_port}",
-    ]
-    if verbose:
-        cmd.append("-v")
-
-    log_file = spec.log_path.open("ab")
-    print(f"+ {' '.join(cmd)} >> {spec.log_path}", flush=True)
-    return subprocess.Popen(
-        cmd,
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
-        preexec_fn=os.setsid if hasattr(os, "setsid") else None,
+        boot_peer=boot_peer,
     )
 
 
@@ -163,29 +109,3 @@ def wait_for_nodes(specs: list[NodeSpec], timeout_sec: float = 120.0) -> bool:
             return False
         print(f"node{spec.index} RPC is ready on http://127.0.0.1:{spec.rpc_port}", flush=True)
     return True
-
-
-def stop_processes(processes: list[subprocess.Popen[bytes]]) -> None:
-    for process in processes:
-        if process.poll() is not None:
-            continue
-        try:
-            if hasattr(os, "killpg"):
-                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-            else:
-                process.terminate()
-        except ProcessLookupError:
-            continue
-
-    deadline = time.monotonic() + 15.0
-    for process in processes:
-        while process.poll() is None and time.monotonic() < deadline:
-            time.sleep(0.2)
-        if process.poll() is None:
-            try:
-                if hasattr(os, "killpg"):
-                    os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-                else:
-                    process.kill()
-            except ProcessLookupError:
-                pass

@@ -6,11 +6,23 @@ This project is intended for educational and research purposes only. It is not i
 
 ## Setup
 
-Build the launcher:
+Place release archives in `bin/`:
+
+- `lightpool-v*.tar.gz`
+- `lightpool-cli-v*.tar.gz`
+
+Build the launcher and extract binaries:
 
 ```shell
 cargo build --release
 export PATH="$(pwd)/target/release:$(pwd)/bin:$PATH"
+```
+
+For the two-node local network you also need `burst_client` at `bin/burst_client` (or set `BURST_CLIENT_BIN`). Build it from the LightPool SDK repo:
+
+```shell
+cargo build --release -p lightpool-sdk --example burst_client
+cp /path/to/lightpool/target/release/examples/burst_client bin/burst_client
 ```
 
 ## Single Node: Wallet, Token, and Transfer
@@ -79,34 +91,87 @@ lightpool-cli balance \
 
 ## Two Nodes: Local Network
 
-Use `scripts/run_two_nodes.py` to start two validators that share one bootstrap committee.
+Run two validators manually across three terminals. node0 starts alone and produces the first checkpoint at block 1000; node1 joins afterward via state sync and staking.
 
-### 1. Start the network
+### Prerequisites
 
 ```shell
-python3 scripts/run_two_nodes.py --clean
+cargo build --release
+chmod +x scripts/*.sh
 ```
 
-Listening addresses:
+### Listening addresses
 
 | | node0 | node1 |
 | --- | --- | --- |
-| rpc | localhost:26300 | localhost:27300 |
-| ws | localhost:26400 | localhost:27400 |
+| front | 127.0.0.1:26000 | 127.0.0.1:27000 |
+| rpc | 127.0.0.1:26300 | 127.0.0.1:27300 |
+| ws | 127.0.0.1:26400 | 127.0.0.1:27400 |
 
-Useful options:
+### Step-by-step
+
+**Terminal 1** — init wallets and validator config (cleans old `scripts/.local-network`):
 
 ```shell
-python3 scripts/run_two_nodes.py --clean --verbose
-python3 scripts/run_two_nodes.py --data-dir ./scripts/.local-network
+cd scripts
+./init.sh
 ```
 
-Press Ctrl+C to stop all nodes.
+**Terminal 2** — start node0:
 
-### 2. Send transactions through either node
+```shell
+cd scripts
+./run_node0.sh
+```
+
+Wait until you see `Node is running; press Ctrl+C to stop`.
+
+**Terminal 1** — burst transactions on node0 until the first checkpoint:
+
+```shell
+cd scripts
+./burst_stage1.sh
+```
+
+Watch node0 logs until `committed_block_num` reaches **1000** (first checkpoint epoch). Press **Ctrl+C** to stop the burst client.
+
+**Terminal 4** — start node1 (syncs from node0):
+
+```shell
+cd scripts
+./run_node1.sh
+```
+
+Wait until node1 finishes boot sync and shows `Node is running`.
+
+**Terminal 1** — staking setup (LPL token, bonds for both validators):
+
+```shell
+cd scripts
+./staking.sh
+```
+
+**Terminal 1** — burst again to advance the chain:
+
+```shell
+cd scripts
+./burst_stage1.sh
+```
+
+Press Ctrl+C in any node terminal to stop that node.
+
+### Optional: log to file
+
+```shell
+./run_node0.sh .local-network/node0/lightpool.log
+./run_node1.sh .local-network/node1/lightpool.log
+```
+
+### Send transactions through either node
 
 ```shell
 lightpool-cli create-token \
+  --rpc-url http://127.0.0.1:26300 \
   --name "Network Token" \
   --symbol "NET" \
   --total-supply "1000000" \

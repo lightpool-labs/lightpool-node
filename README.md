@@ -145,7 +145,7 @@ Wait until node1 finishes boot sync and shows `Node is running`.
 ./scripts/burst_stage1.sh
 ```
 
-Press Ctrl+C in any node terminal to stop that node.
+Press Ctrl+C in any node terminal to stop the brust.
 
 ### Optional: log to file
 

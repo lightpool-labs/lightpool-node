@@ -93,13 +93,6 @@ lightpool-cli balance \
 
 Run two validators manually across three terminals. node0 starts alone and produces the first checkpoint at block 1000; node1 joins afterward via state sync and staking.
 
-### Prerequisites
-
-```shell
-cargo build --release
-chmod +x scripts/*.sh
-```
-
 ### Listening addresses
 
 | | node0 | node1 |

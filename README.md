@@ -135,7 +135,7 @@ cd scripts
 
 Watch node0 logs until `committed_block_num` reaches **1000** (first checkpoint epoch). Press **Ctrl+C** to stop the burst client.
 
-**Terminal 4** — start node1 (syncs from node0):
+**Terminal 3** — start node1 (syncs from node0):
 
 ```shell
 cd scripts

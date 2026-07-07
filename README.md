@@ -106,15 +106,13 @@ Run two validators manually across three terminals. node0 starts alone and produ
 **Terminal 1** — init wallets and validator config (cleans old `scripts/.local-network`):
 
 ```shell
-cd scripts
-./init.sh
+./scripts/init.sh
 ```
 
 **Terminal 2** — start node0:
 
 ```shell
-cd scripts
-./run_node0.sh
+./scripts/run_node0.sh
 ```
 
 Wait until you see `Node is running; press Ctrl+C to stop`.
@@ -122,8 +120,7 @@ Wait until you see `Node is running; press Ctrl+C to stop`.
 **Terminal 1** — burst transactions on node0 until the first checkpoint:
 
 ```shell
-cd scripts
-./burst_stage1.sh
+./scripts/burst_stage1.sh
 ```
 
 Watch node0 logs until `committed_block_num` reaches **1000** (first checkpoint epoch). Press **Ctrl+C** to stop the burst client.
@@ -131,8 +128,7 @@ Watch node0 logs until `committed_block_num` reaches **1000** (first checkpoint 
 **Terminal 3** — start node1 (syncs from node0):
 
 ```shell
-cd scripts
-./run_node1.sh
+./scripts/run_node1.sh
 ```
 
 Wait until node1 finishes boot sync and shows `Node is running`.
@@ -140,15 +136,13 @@ Wait until node1 finishes boot sync and shows `Node is running`.
 **Terminal 1** — staking setup (LPL token, bonds for both validators):
 
 ```shell
-cd scripts
-./staking.sh
+./scripts/staking.sh
 ```
 
 **Terminal 1** — burst again to advance the chain:
 
 ```shell
-cd scripts
-./burst_stage1.sh
+./scripts/burst_stage1.sh
 ```
 
 Press Ctrl+C in any node terminal to stop that node.
@@ -156,8 +150,8 @@ Press Ctrl+C in any node terminal to stop that node.
 ### Optional: log to file
 
 ```shell
-./run_node0.sh .local-network/node0/lightpool.log
-./run_node1.sh .local-network/node1/lightpool.log
+./scripts/run_node0.sh .local-network/node0/lightpool.log
+./scripts/run_node1.sh .local-network/node1/lightpool.log
 ```
 
 ### Send transactions through either node

@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from config import LIGHTPOOL_CLI
+from lib.config import LIGHTPOOL_CLI
 
 ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*m")
 ADDRESS_PATTERN = re.compile(r"(0x[0-9a-fA-F]{40})")

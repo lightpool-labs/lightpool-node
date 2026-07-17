@@ -3,10 +3,9 @@ name = "lightpool"
 version = "0.1.1"
 edition = "2021"
 authors = ["LightPool Team"]
-description = "LightPool command line interface"
+description = "LightPool node release package (extracts binaries and sets PATH)"
 
-[[bin]]
-name = "lightpool"
-path = "src/main.rs"
+[lib]
+path = "src/lib.rs"
 
 [build-dependencies]

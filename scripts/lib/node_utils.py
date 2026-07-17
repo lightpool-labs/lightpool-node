@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import socket
 import sys
@@ -7,7 +8,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from config import (
+from lib.config import (
     BASE_CONSENSUS_PORT,
     BASE_FRONT_PORT,
     BASE_MEMPOOL_PORT,
@@ -16,6 +17,7 @@ from config import (
     LIGHTPOOL_BIN,
     PORT_STEP,
 )
+from lib.rpc_utils import rpc_url_for_port
 
 
 @dataclass(frozen=True)
@@ -63,6 +65,11 @@ def node_ports(index: int) -> tuple[int, int, int, int, int]:
     )
 
 
+def boot_peer_url(leader_index: int = 0) -> str:
+    _, rpc_port, _, _, _ = node_ports(leader_index)
+    return rpc_url_for_port(rpc_port)
+
+
 def build_node_spec(
     index: int,
     data_dir: Path,
@@ -84,6 +91,52 @@ def build_node_spec(
         consensus_port=consensus_port,
         boot_peer=boot_peer,
     )
+
+
+def lightpool_argv(spec: NodeSpec) -> list[str]:
+    argv = [
+        "--wallet",
+        str(spec.wallet_path),
+        "--store",
+        str(spec.store_path),
+        "--validator",
+        str(spec.validator_path),
+        "--front-listen-addr",
+        f"0.0.0.0:{spec.front_port}",
+        "--rpc-listen-addr",
+        f"0.0.0.0:{spec.rpc_port}",
+        "--ws-listen-addr",
+        f"0.0.0.0:{spec.ws_port}",
+    ]
+    if spec.boot_peer:
+        argv.extend(["--boot-peer", spec.boot_peer, "--role", "pending-member"])
+    return argv
+
+
+def exec_lightpool(spec: NodeSpec, *, log_file: Path | str | None = None) -> None:
+    binary = resolve_lightpool_binary()
+    argv = lightpool_argv(spec)
+    rpc_url = rpc_url_for_port(spec.rpc_port)
+
+    if log_file:
+        log_path = Path(log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Starting node{spec.index} (RPC {rpc_url}, log {log_path})", flush=True)
+        fd = os.open(str(log_path), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+        os.dup2(fd, 1)
+        os.dup2(fd, 2)
+        if fd > 2:
+            os.close(fd)
+    else:
+        if spec.boot_peer:
+            print(
+                f"Starting node{spec.index} (boot-peer {spec.boot_peer})",
+                flush=True,
+            )
+        else:
+            print(f"Starting node{spec.index} (RPC {rpc_url})", flush=True)
+
+    os.execv(binary, [binary, *argv])
 
 
 def rpc_ready(rpc_port: int, timeout_sec: float = 120.0) -> bool:
@@ -109,3 +162,25 @@ def wait_for_nodes(specs: list[NodeSpec], timeout_sec: float = 120.0) -> bool:
             return False
         print(f"node{spec.index} RPC is ready on http://127.0.0.1:{spec.rpc_port}", flush=True)
     return True
+
+
+def run_local_node(
+    index: int,
+    data_dir: Path,
+    *,
+    log_file: Path | str | None = None,
+    reset_store: bool = False,
+) -> None:
+    boot_peer = boot_peer_url(0) if index == 1 else None
+    spec = build_node_spec(index, data_dir, boot_peer=boot_peer)
+
+    if not spec.wallet_path.is_file() or not spec.validator_path.is_file():
+        print("Run init.py first", file=sys.stderr)
+        raise SystemExit(1)
+
+    if reset_store and spec.store_path.is_dir():
+        print(f"Removing stale node{index} store: {spec.store_path}")
+        shutil.rmtree(spec.store_path)
+
+    spec.store_path.mkdir(parents=True, exist_ok=True)
+    exec_lightpool(spec, log_file=log_file)

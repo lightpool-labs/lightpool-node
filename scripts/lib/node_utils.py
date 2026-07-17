@@ -19,6 +19,9 @@ from lib.config import (
 )
 from lib.rpc_utils import rpc_url_for_port
 
+ROLE_VALIDATOR = "validator"
+ROLE_PENDING_MEMBER = "pending-member"
+
 
 @dataclass(frozen=True)
 class NodeSpec:
@@ -32,6 +35,7 @@ class NodeSpec:
     ws_port: int
     mempool_port: int
     consensus_port: int
+    role: str = ROLE_VALIDATOR
     boot_peer: str | None = None
 
 
@@ -74,6 +78,7 @@ def build_node_spec(
     index: int,
     data_dir: Path,
     *,
+    role: str = ROLE_VALIDATOR,
     boot_peer: str | None = None,
 ) -> NodeSpec:
     node_dir = data_dir / f"node{index}"
@@ -89,6 +94,7 @@ def build_node_spec(
         ws_port=ws_port,
         mempool_port=mempool_port,
         consensus_port=consensus_port,
+        role=role,
         boot_peer=boot_peer,
     )
 
@@ -101,6 +107,8 @@ def lightpool_argv(spec: NodeSpec) -> list[str]:
         str(spec.store_path),
         "--validator",
         str(spec.validator_path),
+        "--role",
+        spec.role,
         "--front-listen-addr",
         f"0.0.0.0:{spec.front_port}",
         "--rpc-listen-addr",
@@ -109,7 +117,7 @@ def lightpool_argv(spec: NodeSpec) -> list[str]:
         f"0.0.0.0:{spec.ws_port}",
     ]
     if spec.boot_peer:
-        argv.extend(["--boot-peer", spec.boot_peer, "--role", "pending-member"])
+        argv.extend(["--boot-peer", spec.boot_peer])
     return argv
 
 
@@ -121,20 +129,28 @@ def exec_lightpool(spec: NodeSpec, *, log_file: Path | str | None = None) -> Non
     if log_file:
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        print(f"Starting node{spec.index} (RPC {rpc_url}, log {log_path})", flush=True)
+        print(
+            f"Starting node{spec.index} role={spec.role} "
+            f"(RPC {rpc_url}, log {log_path})",
+            flush=True,
+        )
         fd = os.open(str(log_path), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
         os.dup2(fd, 1)
         os.dup2(fd, 2)
         if fd > 2:
             os.close(fd)
+    elif spec.role == ROLE_PENDING_MEMBER:
+        print(
+            f"Starting node{spec.index} as PendingMember (stake=0), "
+            f"boot-peer={spec.boot_peer}; will spawn_committee_member_announcement "
+            f"Join to node0",
+            flush=True,
+        )
     else:
-        if spec.boot_peer:
-            print(
-                f"Starting node{spec.index} (boot-peer {spec.boot_peer})",
-                flush=True,
-            )
-        else:
-            print(f"Starting node{spec.index} (RPC {rpc_url})", flush=True)
+        print(
+            f"Starting node{spec.index} as Validator (RPC {rpc_url})",
+            flush=True,
+        )
 
     os.execv(binary, [binary, *argv])
 
@@ -168,15 +184,33 @@ def run_local_node(
     index: int,
     data_dir: Path,
     *,
+    role: str,
+    boot_peer: str | None = None,
     log_file: Path | str | None = None,
     reset_store: bool = False,
+    require_boot_peer_ready: bool = False,
 ) -> None:
-    boot_peer = boot_peer_url(0) if index == 1 else None
-    spec = build_node_spec(index, data_dir, boot_peer=boot_peer)
+    if role == ROLE_PENDING_MEMBER and not boot_peer:
+        print("PendingMember requires --boot-peer (node0 RPC)", file=sys.stderr)
+        raise SystemExit(1)
+
+    spec = build_node_spec(index, data_dir, role=role, boot_peer=boot_peer)
 
     if not spec.wallet_path.is_file() or not spec.validator_path.is_file():
         print("Run init.py first", file=sys.stderr)
         raise SystemExit(1)
+
+    if require_boot_peer_ready and boot_peer:
+        leader_rpc_port = node_ports(0)[1]
+        print(f"Waiting for node0 RPC on {boot_peer} before joining...", flush=True)
+        if not rpc_ready(leader_rpc_port, timeout_sec=30.0):
+            print(
+                f"node0 RPC is not ready at {boot_peer}.\n"
+                "Start node0 first with run_node0.py and wait until you see:\n"
+                "  Node is running; press Ctrl+C to stop",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
 
     if reset_store and spec.store_path.is_dir():
         print(f"Removing stale node{index} store: {spec.store_path}")

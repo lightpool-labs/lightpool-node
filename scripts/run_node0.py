@@ -11,12 +11,14 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 from lib.bin_utils import require_binary
 from lib.config import DATA_DIR, LIGHTPOOL_BIN
-from lib.node_utils import build_node_spec, run_local_node
+from lib.node_utils import ROLE_VALIDATOR, build_node_spec, run_local_node
 
 
 def main() -> None:
-    default_log = build_node_spec(0, DATA_DIR).log_path
-    parser = argparse.ArgumentParser(description="Run local network node0.")
+    default_log = build_node_spec(0, DATA_DIR, role=ROLE_VALIDATOR).log_path
+    parser = argparse.ArgumentParser(
+        description="Run local network node0 as Validator (single-node bootstrap, 100% stake)."
+    )
     parser.add_argument(
         "log_file",
         nargs="?",
@@ -29,7 +31,12 @@ def main() -> None:
         LIGHTPOOL_BIN,
         "cargo build --release (extracts bin/lightpool from bin/lightpool-v*.tar.gz)",
     )
-    run_local_node(0, DATA_DIR, log_file=args.log_file)
+    run_local_node(
+        0,
+        DATA_DIR,
+        role=ROLE_VALIDATOR,
+        log_file=args.log_file,
+    )
 
 
 if __name__ == "__main__":

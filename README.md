@@ -137,13 +137,13 @@ python3 scripts/burst_stage1.py
 
 Watch node0 logs until `committed_block_num` reaches **1000** (first checkpoint epoch). Press **Ctrl+C** to stop the burst client.
 
-**Terminal 3** — start node1 (syncs from node0):
+**Terminal 3** — start node1 as PendingMember (stake=0; syncs from node0 and sends Join announcement):
 
 ```shell
 python3 scripts/run_node1.py
 ```
 
-Wait until node1 finishes boot sync and shows `Node is running`.
+Wait until node1 finishes boot sync, announces Join to node0, and shows `Node is running`.
 
 **Terminal 1** — staking setup (LPL token, bonds for both validators):
 

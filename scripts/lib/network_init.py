@@ -5,7 +5,12 @@ import shutil
 from pathlib import Path
 
 from lib.config import DATA_DIR
-from lib.node_utils import boot_peer_url, build_node_spec
+from lib.node_utils import (
+    ROLE_PENDING_MEMBER,
+    ROLE_VALIDATOR,
+    boot_peer_url,
+    build_node_spec,
+)
 from lib.wallet_utils import create_wallet, wallet_identity
 
 
@@ -15,8 +20,13 @@ def init_network(data_dir: Path = DATA_DIR) -> None:
         shutil.rmtree(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    node0 = build_node_spec(0, data_dir)
-    node1 = build_node_spec(1, data_dir, boot_peer=boot_peer_url(0))
+    node0 = build_node_spec(0, data_dir, role=ROLE_VALIDATOR)
+    node1 = build_node_spec(
+        1,
+        data_dir,
+        role=ROLE_PENDING_MEMBER,
+        boot_peer=boot_peer_url(0),
+    )
 
     for spec in (node0, node1):
         create_wallet(spec.wallet_path, force=True)

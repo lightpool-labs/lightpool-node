@@ -6,10 +6,10 @@ import subprocess
 from pathlib import Path
 from typing import Iterable
 
-from config import STAKING_BOND_AMOUNTS, STAKING_NODE1_FUNDING
-from node_utils import NodeSpec
-from rpc_utils import rpc_url_for_port
-from wallet_utils import resolve_cli_binary, wallet_identity
+from lib.config import STAKING_BOND_AMOUNTS, STAKING_NODE1_FUNDING
+from lib.node_utils import NodeSpec
+from lib.rpc_utils import rpc_url_for_port
+from lib.wallet_utils import resolve_cli_binary, wallet_identity
 
 TOKEN_ADDRESS_PATTERN = re.compile(
     r"Token Address:\s*(0x[0-9a-fA-F]+)",

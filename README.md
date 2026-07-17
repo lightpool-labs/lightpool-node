@@ -6,24 +6,35 @@ This project is intended for educational and research purposes only. It is not i
 
 ## Setup
 
-Place release archives in `bin/`:
+This package does **not** need LightPool source code. Put prebuilt release artifacts in `bin/`:
 
-- `lightpool-v*.tar.gz`
-- `lightpool-cli-v*.tar.gz`
+- `lightpool-v*.tar.gz` — extracted to `bin/lightpool` on build
+- `lightpool-cli-v*.tar.gz` — extracted to `bin/lightpool-cli` on build
+- `burst_client` — prebuilt binary placed directly at `bin/burst_client`
 
-Build the launcher and extract binaries:
+  You can build `burst_client` from
+  [`lightpool-sdk-rust/examples/burst_client.rs`](../lightpool-sdk-rust/examples/burst_client.rs):
+
+  ```shell
+  # in lightpool-sdk-rust
+  cargo build --release --example burst_client
+  cp target/release/examples/burst_client /path/to/lightpool-node/bin/burst_client
+  ```
+
+Extract packages and generate `env.sh` (adds `bin/` to `PATH`):
 
 ```shell
 cargo build --release
-export PATH="$(pwd)/target/release:$(pwd)/bin:$PATH"
+source ./env.sh
 ```
 
-For the two-node local network you also need `burst_client` at `bin/burst_client` (or set `BURST_CLIENT_BIN`). Build it from the LightPool SDK repo:
+After that, these commands are available on `PATH`:
 
-```shell
-cargo build --release -p lightpool-sdk --example burst_client
-cp /path/to/lightpool/target/release/examples/burst_client bin/burst_client
-```
+- `lightpool`
+- `lightpool-cli`
+- `burst_client`
+
+Local network scripts also resolve these binaries under `bin/` directly. You can override with `LIGHTPOOL_BIN`, `LIGHTPOOL_CLI`, or `BURST_CLIENT_BIN`.
 
 ## Single Node: Wallet, Token, and Transfer
 
@@ -41,7 +52,7 @@ lightpool-cli address
 In one terminal:
 
 ```shell
-cargo run --release
+lightpool
 ```
 
 Press Ctrl+C to stop the node.
@@ -106,13 +117,13 @@ Run two validators manually across three terminals. node0 starts alone and produ
 **Terminal 1** — init wallets and validator config (cleans old `scripts/.local-network`):
 
 ```shell
-./scripts/init.sh
+python3 scripts/init.py
 ```
 
 **Terminal 2** — start node0:
 
 ```shell
-./scripts/run_node0.sh
+python3 scripts/run_node0.py
 ```
 
 Wait until you see `Node is running; press Ctrl+C to stop`.
@@ -120,7 +131,7 @@ Wait until you see `Node is running; press Ctrl+C to stop`.
 **Terminal 1** — burst transactions on node0 until the first checkpoint:
 
 ```shell
-./scripts/burst_stage1.sh
+python3 scripts/burst_stage1.py
 ```
 
 Watch node0 logs until `committed_block_num` reaches **1000** (first checkpoint epoch). Press **Ctrl+C** to stop the burst client.
@@ -128,7 +139,7 @@ Watch node0 logs until `committed_block_num` reaches **1000** (first checkpoint 
 **Terminal 3** — start node1 (syncs from node0):
 
 ```shell
-./scripts/run_node1.sh
+python3 scripts/run_node1.py
 ```
 
 Wait until node1 finishes boot sync and shows `Node is running`.
@@ -136,22 +147,22 @@ Wait until node1 finishes boot sync and shows `Node is running`.
 **Terminal 1** — staking setup (LPL token, bonds for both validators):
 
 ```shell
-./scripts/staking.sh
+python3 scripts/staking.py
 ```
 
 **Terminal 1** — burst again to advance the chain:
 
 ```shell
-./scripts/burst_stage1.sh
+python3 scripts/burst_stage1.py
 ```
 
-Press Ctrl+C in any node terminal to stop the brust.
+Press Ctrl+C in any node terminal to stop the burst.
 
 ### Optional: log to file
 
 ```shell
-./scripts/run_node0.sh .local-network/node0/lightpool.log
-./scripts/run_node1.sh .local-network/node1/lightpool.log
+python3 scripts/run_node0.py scripts/.local-network/node0/lightpool.log
+python3 scripts/run_node1.py scripts/.local-network/node1/lightpool.log
 ```
 
 ### Send transactions through either node

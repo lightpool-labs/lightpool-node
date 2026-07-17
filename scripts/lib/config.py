@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-SCRIPTS_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = SCRIPTS_DIR.parent
 
 NODE_COUNT = 2
@@ -24,6 +24,8 @@ BASE_CONSENSUS_PORT = 26200
 BASE_RPC_PORT = 26300
 BASE_WS_PORT = 26400
 
+BURST_FRONT = "127.0.0.1"
+
 DATA_DIR = Path(
     os.environ.get("LIGHTPOOL_NETWORK_DATA_DIR", SCRIPTS_DIR / ".local-network")
 )
@@ -36,11 +38,6 @@ LIGHTPOOL_BIN = os.environ.get(
 LIGHTPOOL_CLI = os.environ.get(
     "LIGHTPOOL_CLI",
     str(PROJECT_ROOT / "bin" / "lightpool-cli"),
-)
-
-LAUNCHER_BIN = os.environ.get(
-    "LIGHTPOOL_LAUNCHER_BIN",
-    str(PROJECT_ROOT / "target" / "release" / "lightpool"),
 )
 
 BURST_CLIENT_BIN = os.environ.get(

@@ -13,7 +13,8 @@ This package does **not** need LightPool source code. Put prebuilt release artif
 - `burst_client` — prebuilt binary placed directly at `bin/burst_client`
 
   You can build `burst_client` from
-  [`lightpool-sdk-rust/examples/burst_client.rs`](../lightpool-sdk-rust/examples/burst_client.rs):
+  [lightpool-sdk-rust](https://github.com/lightpool-labs/lightpool-sdk-rust)
+  ([`examples/burst_client.rs`](https://github.com/lightpool-labs/lightpool-sdk-rust/blob/main/examples/burst_client.rs)):
 
   ```shell
   # in lightpool-sdk-rust

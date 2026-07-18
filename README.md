@@ -103,7 +103,7 @@ lightpool-cli balance \
 
 ## Two Nodes: Local Network
 
-Run two validators manually across three terminals. node0 starts alone and produces the first checkpoint at block 1000; node1 joins afterward via state sync and staking.
+Run two validators locally. node0 starts alone and produces the first checkpoint at block 1000; node1 joins afterward via state sync and staking. After the second epoch (~block 2000), both nodes should propose.
 
 ### Listening addresses
 
@@ -113,7 +113,35 @@ Run two validators manually across three terminals. node0 starts alone and produ
 | rpc | 127.0.0.1:26300 | 127.0.0.1:27300 |
 | ws | 127.0.0.1:26400 | 127.0.0.1:27400 |
 
-### Step-by-step
+### Automated: `run_twonode.py`
+
+One command drives the full flow (init → node0 → burst past 800 → node1 → first checkpoint sync → staking → burst to 3000):
+
+```shell
+python3 scripts/run_twonode.py
+```
+
+What it does:
+
+1. `init` — reset `scripts/.local-network`, create wallets/validator configs
+2. Start **node0** as Validator
+3. Burst until tip **> 800**, pause burst
+4. Start **node1** as PendingMember (`--boot-peer` node0)
+5. Burst again until tip **>= 1000**, stop burst so node1 can sync the first checkpoint
+6. Run **staking** (LPL token, bonds for both nodes)
+7. Burst until tip **>= 3000** (after 2000 both nodes should propose)
+
+Logs:
+
+- `scripts/.local-network/node0/lightpool.log`
+- `scripts/.local-network/node1/lightpool.log`
+- `scripts/.local-network/burst_*.log`
+
+Press **Ctrl+C** to stop both nodes.
+
+### Manual step-by-step
+
+Use separate terminals if you want to control each step yourself.
 
 **Terminal 1** — init wallets and validator config (cleans old `scripts/.local-network`):
 
@@ -129,19 +157,19 @@ python3 scripts/run_node0.py
 
 Wait until you see `Node is running; press Ctrl+C to stop`.
 
-**Terminal 1** — burst transactions on node0 until the first checkpoint:
+**Terminal 1** — burst transactions on node0 until near the first checkpoint, then start node1 before tip passes 1000:
 
 ```shell
 python3 scripts/burst_stage1.py
 ```
 
-Watch node0 logs until `committed_block_num` reaches **1000** (first checkpoint epoch). Press **Ctrl+C** to stop the burst client.
-
-**Terminal 3** — start node1 as PendingMember (stake=0; syncs from node0 and sends Join announcement):
+When tip is past **~800** and still before **1000**, in **Terminal 3** start node1:
 
 ```shell
 python3 scripts/run_node1.py
 ```
+
+Continue burst until `committed_block_num` reaches **1000** (first checkpoint), then **Ctrl+C** the burst client so node1 can finish checkpoint sync.
 
 Wait until node1 finishes boot sync, announces Join to node0, and shows `Node is running`.
 
@@ -151,15 +179,15 @@ Wait until node1 finishes boot sync, announces Join to node0, and shows `Node is
 python3 scripts/staking.py
 ```
 
-**Terminal 1** — burst again to advance the chain:
+**Terminal 1** — burst again to advance the chain (past 2000 for dual proposal):
 
 ```shell
 python3 scripts/burst_stage1.py
 ```
 
-Press Ctrl+C in any node terminal to stop the burst.
+Press Ctrl+C in any node terminal to stop.
 
-### Optional: log to file
+### Optional: log to file (manual runs)
 
 ```shell
 python3 scripts/run_node0.py scripts/.local-network/node0/lightpool.log

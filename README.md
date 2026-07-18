@@ -113,12 +113,12 @@ Run two validators locally. node0 starts alone and produces the first checkpoint
 | rpc | 127.0.0.1:26300 | 127.0.0.1:27300 |
 | ws | 127.0.0.1:26400 | 127.0.0.1:27400 |
 
-### Automated: `run_twonode.py`
+### Automated: `run_townodes.py`
 
 One command drives the full flow (init → node0 → burst past 800 → node1 → first checkpoint sync → staking → burst to 3000):
 
 ```shell
-python3 scripts/run_twonode.py
+python3 scripts/run_townodes.py
 ```
 
 What it does:

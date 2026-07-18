@@ -44,3 +44,12 @@ BURST_CLIENT_BIN = os.environ.get(
     "BURST_CLIENT_BIN",
     str(PROJECT_ROOT / "bin" / "burst_client"),
 )
+
+BUILD_LIGHTPOOL_HINT = (
+    "cargo build --release "
+    f"(extracts binaries under {PROJECT_ROOT / 'bin'})"
+)
+BUILD_BURST_HINT = (
+    f"Place burst_client at {PROJECT_ROOT / 'bin' / 'burst_client'} "
+    "(build from lightpool-sdk-rust: cargo build --release --example burst_client)"
+)

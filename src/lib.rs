@@ -1,3 +1,6 @@
+// Copyright (c) LightPool Labs
+// Author: xiaoyu1998
+
 //! Release helper crate for lightpool-node.
 //!
 //! `build.rs` extracts prebuilt binaries into `bin/` and writes `env.sh` so

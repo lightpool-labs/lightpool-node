@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
-PROJECT_ROOT = SCRIPTS_DIR.parent
+PROJECT_ROOT = SCRIPTS_DIR.parent.parent
 
 NODE_COUNT = 2
 PORT_STEP = 1000

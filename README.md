@@ -1,6 +1,6 @@
 # lightpool-node
 
-High-Frequency Trading Infrastructure Powered by a Layer 1 Blockchain
+High-Frequency Trading Infrastructure Powered by a Layer 1 Blockchain with 200ktps orderbook
 
 This project is intended for educational and research purposes only. It is not intended for production deployment, live trading, or commercial use.
 

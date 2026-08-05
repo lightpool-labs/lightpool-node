@@ -21,10 +21,10 @@ def load_step(filename: str):
     return module
 
 
+# Cash collateral comes from bridge LP USDT (not create-token mint supply).
 # Market create/mint moved to liquidity_maker bootstrap (top-N from Polymarket).
 STEPS = [
-    ("create-token", "01_create_token.py"),
-    ("transfer", "02_transfer.py"),
+    ("bridge-bootstrap", "00_bridge_bootstrap.py"),
     ("create-vault", "05_create_vault.py"),
 ]
 
@@ -33,10 +33,18 @@ def main() -> int:
     for label, filename in STEPS:
         print(f"\n=== Step: {label} ===", flush=True)
         module = load_step(filename)
-        code = main_runner(label, module.build_args)
+        if hasattr(module, "run"):
+            code = module.run()
+        else:
+            code = main_runner(label, module.build_args)
         if code != 0:
             return code
     print("\nAll sample steps completed.", flush=True)
+    print(
+        "Preferred local order: --phase deploy → start lightpool once with "
+        "--bridge-config → --phase init (see doc/frontend-bridge-deposit-withdraw.md).",
+        flush=True,
+    )
     return 0
 
 

@@ -20,6 +20,26 @@ CLI_BINARY = os.environ.get(
     ),
 )
 
+
+def _load_dotenv(path: Path) -> None:
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+_load_dotenv(Path(__file__).with_name(".env.bridge"))
+
+# Bridge LP USDT is the cash collateral after 00_bridge_bootstrap.
+CASH_TOKEN_ADDRESS = os.environ.get("CASH_TOKEN_ADDRESS") or os.environ.get(
+    "LP_USDT", "0x0200000000000001"
+)
+CASH_TOKEN_SYMBOL = os.environ.get("CASH_TOKEN_SYMBOL", "USDT")
+
 CREATE_TOKEN = {
     "name": "USDT",
     "symbol": "USDT",
@@ -28,7 +48,7 @@ CREATE_TOKEN = {
 }
 
 TRANSFER = {
-    "token_address": "0x0200000000000001",
+    "token_address": CASH_TOKEN_ADDRESS,
     "to": "0xC019cECd52FE1f68b53daf766c4aF0Dea667A2c7",
     # Enough for ~5 markets × 1e9 mint + leftover collateral for mirrored bids.
     "amount": "20000000000",
@@ -36,7 +56,7 @@ TRANSFER = {
 
 CREATE_MARKET = {
     "question": "Will France win the 2026 fifa world cup?",
-    "collateral_token": "0x0200000000000001",
+    "collateral_token": CASH_TOKEN_ADDRESS,
     "resolution_deadline": "2026-12-31T23:59:59Z",
     "tick_size": "0.001",
     "min_order_size": "0.1",
@@ -47,7 +67,7 @@ CREATE_MARKET = {
 
 CREATE_VAULT = {
     "name": "Event LP Vault",
-    "quote_token": "0x0200000000000001",
+    "quote_token": CASH_TOKEN_ADDRESS,
     "share_name": "Event LP Share",
     "share_symbol": "vEVT",
     "seed_amount": "100000",
@@ -56,7 +76,7 @@ CREATE_VAULT = {
 MINT_MARKET = {
     "market_address": "0x0400000000000001",
     "amount": "5000000",
-    "collateral_token": "0x0200000000000001",
+    "collateral_token": CASH_TOKEN_ADDRESS,
     "yes_token": "0x0200000000000002",
     "no_token": "0x0200000000000003",
 }

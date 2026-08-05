@@ -113,9 +113,6 @@ export USER_ETH=0xC019cECd52FE1f68b53daf766c4aF0Dea667A2c7
 # Maker → clob-index
 export LIGHTPOOL_CLOB_INDEX_HTTP=http://127.0.0.1:3002
 export LIGHTPOOL_CLOB_INDEX_WS=ws://127.0.0.1:3002
-
-# Polymarket + MetaMask cloud (required if your network blocks them)
-export HTTPS_PROXY=http://127.0.0.1:8118
 ```
 
 Create / reuse the node wallet:
@@ -234,7 +231,8 @@ Requires maker LP USDT from init (above).
 
 ```bash
 cd ~/work/lightpool-labs/lightpool-bot
-# HTTPS_PROXY if Polymarket is blocked
+# Required if Polymarket is blocked from your network (also ok in lightpool-bot/.env)
+export HTTPS_PROXY=http://127.0.0.1:8118
 cargo run -p lightpool-strategies --bin liquidity-maker -- \
   --polymarket-slug us-announces-end-of-iranian-blockade-byptptpt-20260713152715080 \
   --bootstrap-markets \

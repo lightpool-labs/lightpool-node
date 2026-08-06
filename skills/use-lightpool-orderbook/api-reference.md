@@ -1,10 +1,12 @@
 # LightPool integrator API reference
 
 LightPool is a blockchain orderbook with prediction-market integration.
-Integrate via **`lightpool-clob-index` only**. Paths below are relative to a
-`lightpool-labs` workspace unless noted.
+**Not an online service** — run `lightpool-node` and `lightpool-clob-index`
+locally, then integrate via **local clob-index only**.
 
-## clob-index
+See [SKILL.md](SKILL.md) for download and run steps.
+
+## clob-index (local)
 
 Default listen: `HOST`/`PORT` → `0.0.0.0:3002`.
 

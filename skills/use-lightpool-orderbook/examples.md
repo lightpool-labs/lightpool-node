@@ -1,12 +1,40 @@
 # Examples and reference code
 
 LightPool is a blockchain orderbook; prediction markets use the same CLOB
-via event contracts. Integrate through **clob-index**. Prefer reading these
-files over inventing new call patterns.
+via event contracts. **Download and run** `lightpool-node` and
+`lightpool-clob-index` locally — they are not online services.
 
-## clob-index
+## Download
 
-Primary surface for app developers:
+```bash
+mkdir -p ~/work/lightpool-labs && cd ~/work/lightpool-labs
+git clone git@github.com:lightpool-labs/lightpool-node.git
+git clone git@github.com:lightpool-labs/lightpool-clob-index.git
+git clone git@github.com:lightpool-labs/lightpool-sdk-rust.git
+```
+
+## Run node
+
+```bash
+cd ~/work/lightpool-labs/lightpool-node
+# Place lightpool-v*.tar.gz and lightpool-cli-v*.tar.gz under bin/
+cargo build --release
+source ./env.sh
+lightpool-cli create-wallet --force   # once
+lightpool                              # keep running (RPC :26300, WS :26400)
+```
+
+## Run clob-index
+
+```bash
+cd ~/work/lightpool-labs/lightpool-clob-index
+cp -n .env.example .env
+cargo run --release                    # keep running (:3002)
+```
+
+App endpoints: `http://127.0.0.1:3002/api/...`, `ws://127.0.0.1:3002/api/ws`.
+
+## clob-index code map
 
 | Piece | Path |
 |-------|------|
@@ -14,22 +42,12 @@ Primary surface for app developers:
 | HTTP routes | `lightpool-clob-index/src/http/` |
 | WS channels | `lightpool-clob-index/src/ws/` |
 
-Default endpoints:
-
-- HTTP: `http://127.0.0.1:3002` (routes under `/api`)
-- WS: `ws://127.0.0.1:3002/api/ws`
-
-## Local stack for apps
-
-Typical packages side by side: `lightpool-node`, `lightpool-bridge`,
-`lightpool-clob-index`, `lightpool-sdk-rust`.
-
 ## SDK (signing only)
 
 Crate: `lightpool-sdk` in `lightpool-sdk-rust/`.
 
 Use for offline sign of `place_order` / `cancel_order` / etc., then POST to
-`/api/tx/submit`. Do not use SDK clients against node RPC/WS from an app.
+local `/api/tx/submit`. Do not use SDK clients against node RPC/WS from an app.
 
 | Type | Role |
 |------|------|

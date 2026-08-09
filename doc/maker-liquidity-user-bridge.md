@@ -17,7 +17,7 @@ Create a root folder and put the downloaded packages side by side:
 lightpool-labs/
   tools/                 # optional (e.g. bridge-local config written by bootstrap)
   lightpool-node/        # node release package
-    bin/                 # lightpool, lightpool-cli
+    bin/                 # lightpool (node + client subcommands)
     tools/reth/          # download.sh + run-dev.sh
   lightpool-bridge/      # EVM MockUSDT + Bridge (Foundry)
   lightpool-clob-index/  # CLOB index HTTP/WS
@@ -29,7 +29,7 @@ You download / clone at least:
 
 | Package | Role |
 |---------|------|
-| `lightpool-node` | Prebuilt `lightpool` + `lightpool-cli` under `bin/` |
+| `lightpool-node` | Prebuilt `lightpool` under `bin/` |
 | `lightpool-bridge` | Deploy MockUSDT + Bridge on Reth |
 | `lightpool-clob-index` | Index books / orders for app + maker |
 | `lightpool-bot` | Polymarket → LightPool liquidity maker |
@@ -40,7 +40,7 @@ You download / clone at least:
 | Role | Address / key |
 |------|----------------|
 | User (MetaMask) | `0xC019cECd52FE1f68b53daf766c4aF0Dea667A2c7` |
-| Maker / validator | `lightpool-cli address` (`~/.lightpool/wallet.json`) |
+| Maker / validator | `lightpool address` (`~/.lightpool/wallet.json`) |
 | Deployer (Reth `--dev` #0) | `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266` |
 
 **Funding rule:** bridge LP USDT (`0x0200…`) is **not** mintable by the maker wallet. Only Link `confirm_dep` after `Bridge.deposit` credits LP USDT. Maker funding is part of **init** (below).
@@ -84,7 +84,7 @@ cast --version
 
 ```bash
 cd ~/work/lightpool-labs/lightpool-node
-# Place lightpool-v*.tar.gz and lightpool-cli-v*.tar.gz under bin/ if not already there
+# Place lightpool-v*.tar.gz under bin/ if not already there
 cargo build --release
 source ./env.sh
 ```
@@ -93,7 +93,6 @@ After that you should have:
 
 ```text
 lightpool-node/bin/lightpool
-lightpool-node/bin/lightpool-cli
 ```
 
 ### 0.4 Env (every new terminal)
@@ -103,8 +102,8 @@ cd ~/work/lightpool-labs
 export PATH="$HOME/.foundry/bin:$PWD/lightpool-node/tools/reth/bin:$PWD/lightpool-node/bin:$PATH"
 export RETH_RPC=http://127.0.0.1:8545
 export LP_RPC=http://127.0.0.1:26300
-export LP_CLI=$PWD/lightpool-node/bin/lightpool-cli
-export LIGHTPOOL_CLI=$LP_CLI
+export LP_CLI=$PWD/lightpool-node/bin/lightpool
+export LIGHTPOOL_BIN=$LP_CLI
 export NODE_WALLET=$HOME/.lightpool/wallet.json
 export EVM_CHAIN_ID=1337
 export PK=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
@@ -155,14 +154,14 @@ This mints a large EVM USDT balance to the validator/maker on Reth (and a smalle
 
 ```bash
 cd ~/work/lightpool-labs
-lightpool --role validator \
+lightpool node --role validator \
   --bridge-config $PWD/tools/bridge-local/bridge-config.json
 ```
 
 Or explicitly:
 
 ```bash
-~/work/lightpool-labs/lightpool-node/bin/lightpool --role validator \
+~/work/lightpool-labs/lightpool-node/bin/lightpool node --role validator \
   --bridge-config ~/work/lightpool-labs/tools/bridge-local/bridge-config.json
 ```
 
@@ -197,7 +196,7 @@ $LP_CLI --rpc-url $LP_RPC balance \
   --account "$VALIDATOR_ETH"
 ```
 
-`Available` must be **> 0**. Do **not** use `lightpool-cli mint` on bridge LP USDT.
+`Available` must be **> 0**. Do **not** use `lightpool mint` on bridge LP USDT.
 
 **E — clob-index**
 

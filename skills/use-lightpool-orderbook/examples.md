@@ -17,11 +17,11 @@ git clone git@github.com:lightpool-labs/lightpool-sdk-rust.git
 
 ```bash
 cd ~/work/lightpool-labs/lightpool-node
-# Place lightpool-v*.tar.gz and lightpool-cli-v*.tar.gz under bin/
+# Place lightpool-v*.tar.gz under bin/
 cargo build --release
 source ./env.sh
-lightpool-cli create-wallet --force   # once
-lightpool                              # keep running (RPC :26300, WS :26400)
+lightpool create-wallet --force   # once
+lightpool node                    # keep running (RPC :26300, WS :26400)
 ```
 
 ## Run clob-index

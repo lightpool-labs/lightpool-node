@@ -316,7 +316,7 @@ def _phase_deploy() -> None:
     _write_bridge_config(bridge)
     print(
         "Deploy phase done. Start LightPool ONCE with:\n"
-        f"  lightpool --role validator --bridge-config {BRIDGE_CONFIG_JSON}\n"
+        f"  lightpool node --role validator --bridge-config {BRIDGE_CONFIG_JSON}\n"
         "Then run: python3 00_bridge_bootstrap.py --phase init",
         flush=True,
     )
@@ -339,7 +339,7 @@ def _wallet_eth_private_key() -> str:
 
 
 def _parse_lp_available_raw(balance_output: str) -> int | None:
-    """Parse lightpool-cli balance Available into raw units (6 decimals).
+    """Parse lightpool balance Available into raw units (6 decimals).
 
     CLI prints whole USDT when the fractional part is zero (e.g. ``100`` not ``100.000000``).
     """

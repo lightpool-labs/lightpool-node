@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create USDT collateral token via lightpool-cli."""
+"""Create USDT collateral token via lightpool."""
 
 from __future__ import annotations
 

@@ -9,7 +9,6 @@ This project is intended for educational and research purposes only. It is not i
 This package does **not** need LightPool source code. Put prebuilt release artifacts in `bin/`:
 
 - `lightpool-v*.tar.gz` — extracted to `bin/lightpool` on build
-- `lightpool-cli-v*.tar.gz` — extracted to `bin/lightpool-cli` on build
 - `burst_client` — prebuilt binary placed directly at `bin/burst_client`
 
   You can build `burst_client` from
@@ -31,11 +30,10 @@ source ./env.sh
 
 After that, these commands are available on `PATH`:
 
-- `lightpool`
-- `lightpool-cli`
+- `lightpool` (node + client subcommands)
 - `burst_client`
 
-Local network scripts also resolve these binaries under `bin/` directly. You can override with `LIGHTPOOL_BIN`, `LIGHTPOOL_CLI`, or `BURST_CLIENT_BIN`.
+Local network scripts also resolve these binaries under `bin/` directly. You can override with `LIGHTPOOL_BIN` or `BURST_CLIENT_BIN`.
 
 ## Single Node: Wallet, Token, and Transfer
 
@@ -44,8 +42,8 @@ This example runs one validator locally, creates a token, and transfers tokens t
 ### 1. Create wallet
 
 ```shell
-lightpool-cli create-wallet --force
-lightpool-cli address
+lightpool create-wallet --force
+lightpool address
 ```
 
 ### 2. Run the node
@@ -53,7 +51,7 @@ lightpool-cli address
 In one terminal:
 
 ```shell
-lightpool
+lightpool node
 ```
 
 Press Ctrl+C to stop the node.
@@ -63,7 +61,7 @@ Press Ctrl+C to stop the node.
 In another terminal:
 
 ```shell
-lightpool-cli create-token \
+lightpool create-token \
   --name "Example Token" \
   --symbol "EXT" \
   --total-supply "1000000" \
@@ -79,10 +77,10 @@ Create a recipient wallet and transfer tokens:
 ```shell
 mkdir -p data/recipient
 
-lightpool-cli create-wallet --force --wallet-path data/recipient/wallet.json
-lightpool-cli address --wallet-path data/recipient/wallet.json
+lightpool create-wallet --force --wallet-path data/recipient/wallet.json
+lightpool address --wallet-path data/recipient/wallet.json
 
-lightpool-cli transfer \
+lightpool transfer \
   --token-address "TOKEN_ADDRESS" \
   --to "RECIPIENT_ADDRESS" \
   --amount "100"
@@ -93,10 +91,10 @@ Replace `TOKEN_ADDRESS` and `RECIPIENT_ADDRESS` from the command output.
 Check balances:
 
 ```shell
-lightpool-cli balance \
+lightpool balance \
   --token-address "TOKEN_ADDRESS"
 
-lightpool-cli balance \
+lightpool balance \
   --token-address "TOKEN_ADDRESS" \
   --account "RECIPIENT_ADDRESS"
 ```
@@ -197,7 +195,7 @@ python3 scripts/run_2nodes/run_node1.py scripts/run_2nodes/.local-network/node1/
 ### Send transactions through either node
 
 ```shell
-lightpool-cli create-token \
+lightpool create-token \
   --rpc-url http://127.0.0.1:26300 \
   --name "Network Token" \
   --symbol "NET" \

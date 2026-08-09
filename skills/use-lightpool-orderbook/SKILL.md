@@ -61,26 +61,25 @@ HTTPS alternative: `https://github.com/lightpool-labs/<repo>.git`.
 archives under `lightpool-node/bin/`:
 
 - `lightpool-v*.tar.gz`
-- `lightpool-cli-v*.tar.gz`
 
 Then unpack and put binaries on `PATH`:
 
 ```bash
 cd ~/work/lightpool-labs/lightpool-node
-# Place the release archives in bin/ first
+# Place the release archive in bin/ first
 cargo build --release
 source ./env.sh
 ```
 
-You should have `lightpool` and `lightpool-cli` available.
+You should have `lightpool` available (node + client subcommands).
 
 Create a wallet (once), then start the node in its own terminal:
 
 ```bash
-lightpool-cli create-wallet --force
-lightpool-cli address
+lightpool create-wallet --force
+lightpool address
 
-lightpool
+lightpool node
 ```
 
 Default local node0 ports (keep the process running):

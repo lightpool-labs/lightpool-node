@@ -9,7 +9,7 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from lib.bin_utils import require_binary
-from lib.config import DATA_DIR, LIGHTPOOL_CLI
+from lib.config import DATA_DIR, LIGHTPOOL_BIN
 from lib.node_utils import (
     ROLE_PENDING_MEMBER,
     ROLE_VALIDATOR,
@@ -22,8 +22,8 @@ from lib.staking_utils import run_staking_setup
 
 def main() -> None:
     require_binary(
-        LIGHTPOOL_CLI,
-        "cargo build --release (extracts bin/lightpool-cli from bin/lightpool-cli-v*.tar.gz)",
+        LIGHTPOOL_BIN,
+        "cargo build --release (extracts bin/lightpool from bin/lightpool-v*.tar.gz)",
     )
 
     leader = build_node_spec(0, DATA_DIR, role=ROLE_VALIDATOR)

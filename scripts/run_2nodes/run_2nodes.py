@@ -36,7 +36,6 @@ from lib.config import (
     DATA_DIR,
     EPOCH_LENGTH,
     LIGHTPOOL_BIN,
-    LIGHTPOOL_CLI,
 )
 from lib.network_init import init_network
 from lib.node_utils import (
@@ -187,7 +186,6 @@ def _ensure_alive(proc: subprocess.Popen[str], *, label: str) -> None:
 
 def main() -> None:
     require_binary(LIGHTPOOL_BIN, BUILD_LIGHTPOOL_HINT)
-    require_binary(LIGHTPOOL_CLI, BUILD_LIGHTPOOL_HINT)
     require_binary(BURST_CLIENT_BIN, BUILD_BURST_HINT)
 
     atexit.register(_terminate_all)

@@ -35,10 +35,8 @@ LIGHTPOOL_BIN = os.environ.get(
     str(PROJECT_ROOT / "bin" / "lightpool"),
 )
 
-LIGHTPOOL_CLI = os.environ.get(
-    "LIGHTPOOL_CLI",
-    str(PROJECT_ROOT / "bin" / "lightpool-cli"),
-)
+# Compat alias: client subcommands use the same unified binary.
+LIGHTPOOL_CLI = os.environ.get("LIGHTPOOL_CLI", LIGHTPOOL_BIN)
 
 BURST_CLIENT_BIN = os.environ.get(
     "BURST_CLIENT_BIN",
@@ -47,7 +45,7 @@ BURST_CLIENT_BIN = os.environ.get(
 
 BUILD_LIGHTPOOL_HINT = (
     "cargo build --release "
-    f"(extracts binaries under {PROJECT_ROOT / 'bin'})"
+    f"(extracts bin/lightpool from lightpool-v*.tar.gz under {PROJECT_ROOT / 'bin'})"
 )
 BUILD_BURST_HINT = (
     f"Place burst_client at {PROJECT_ROOT / 'bin' / 'burst_client'} "

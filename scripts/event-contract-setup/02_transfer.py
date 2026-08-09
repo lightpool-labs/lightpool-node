@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Transfer USDT to a recipient via lightpool-cli."""
+"""Transfer USDT to a recipient via lightpool."""
 
 from __future__ import annotations
 

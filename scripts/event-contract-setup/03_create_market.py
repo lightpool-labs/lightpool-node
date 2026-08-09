@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create an event contract market via lightpool-cli."""
+"""Create an event contract market via lightpool."""
 
 from __future__ import annotations
 

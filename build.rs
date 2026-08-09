@@ -31,14 +31,23 @@ fn main() {
         }
     }
 
-    if !cli_binary_path.exists() {
-        if let Err(err) = extract_binary_from_archive(
-            &bin_dir,
-            "lightpool-cli-v",
-            "lightpool-cli",
-            &cli_binary_path,
-        ) {
-            println!("cargo:warning={err}");
+    // Compat: older scripts may still call lightpool-cli; point it at the unified binary.
+    if node_binary_path.exists() && !cli_binary_path.exists() {
+        #[cfg(unix)]
+        {
+            if let Err(err) = std::os::unix::fs::symlink("lightpool", &cli_binary_path) {
+                println!(
+                    "cargo:warning=failed to symlink bin/lightpool-cli -> lightpool: {err}"
+                );
+            }
+        }
+        #[cfg(not(unix))]
+        {
+            if let Err(err) = fs::copy(&node_binary_path, &cli_binary_path) {
+                println!(
+                    "cargo:warning=failed to copy lightpool to lightpool-cli: {err}"
+                );
+            }
         }
     }
 
@@ -53,11 +62,6 @@ fn main() {
     if !node_binary_path.exists() {
         println!(
             "cargo:warning=bin/lightpool not found; place lightpool-v*.tar.gz in bin/ and run cargo build"
-        );
-    }
-    if !cli_binary_path.exists() {
-        println!(
-            "cargo:warning=bin/lightpool-cli not found; place lightpool-cli-v*.tar.gz in bin/ and run cargo build"
         );
     }
 }
@@ -112,8 +116,7 @@ fn is_release_archive(path: &Path) -> bool {
     path.file_name()
         .and_then(|name| name.to_str())
         .map(|name| {
-            (name.starts_with("lightpool-v") || name.starts_with("lightpool-cli-v"))
-                && name.ends_with(".tar.gz")
+            name.starts_with("lightpool-v") && name.ends_with(".tar.gz")
         })
         .unwrap_or(false)
 }

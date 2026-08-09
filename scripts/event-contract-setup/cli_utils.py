@@ -9,42 +9,43 @@ from typing import Iterable
 
 from config import CLI_BINARY, RPC_URL, WALLET_PATH
 
-# event-contract-setup/ → lightpool-labs (monorepo root)
-# Under lightpool-node/scripts/... parents[3]; under lightpool/crates/lightpool-cli/scripts/... parents[5]
 _HERE = Path(__file__).resolve().parent
+_NODE_BIN = _HERE.parents[2] / "bin" / "lightpool"
 _REPO_ROOT = next(
     (
         p
         for p in _HERE.parents
-        if (p / "lightpool" / "target" / "release" / "lightpool-cli").is_file()
-        or (p / "lightpool-node").is_dir() and (p / "lightpool").is_dir()
+        if (p / "lightpool" / "target" / "release" / "lightpool").is_file()
+        or ((p / "lightpool-node").is_dir() and (p / "lightpool").is_dir())
     ),
     _HERE.parents[3],
 )
-_MONOREPO_CLI = _REPO_ROOT / "lightpool" / "target" / "release" / "lightpool-cli"
+_MONOREPO_BIN = _REPO_ROOT / "lightpool" / "target" / "release" / "lightpool"
 
 
 def resolve_cli_binary() -> str:
     candidates = [
         CLI_BINARY,
-        str(_MONOREPO_CLI),
-        str(_HERE.parents[4] / "target" / "release" / "lightpool-cli"),
+        str(_NODE_BIN),
+        str(_MONOREPO_BIN),
     ]
     for path in candidates:
         if path and os.path.isfile(path) and os.access(path, os.X_OK):
             return path
 
-    found = shutil.which("lightpool-cli")
+    found = shutil.which("lightpool")
     if found:
         return found
 
     raise FileNotFoundError(
-        "lightpool-cli not found. Tried:\n"
+        "lightpool not found. Tried:\n"
         f"  - {CLI_BINARY}\n"
-        f"  - {_MONOREPO_CLI}\n"
+        f"  - {_NODE_BIN}\n"
+        f"  - {_MONOREPO_BIN}\n"
         "  - PATH\n"
-        "Build with 'cargo build --release -p lightpool-cli' in lightpool/, "
-        "or set LIGHTPOOL_CLI=/path/to/lightpool-cli."
+        "Build with 'cargo build --release' in lightpool-node/ "
+        "(or 'cargo build --release -p lightpool' in lightpool/), "
+        "or set LIGHTPOOL_BIN=/path/to/lightpool."
     )
 
 

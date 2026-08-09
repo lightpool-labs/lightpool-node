@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from lib.config import LIGHTPOOL_CLI
+from lib.config import LIGHTPOOL_BIN
 
 ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*m")
 ADDRESS_PATTERN = re.compile(r"(0x[0-9a-fA-F]{40})")
@@ -41,7 +41,7 @@ def parse_cli_address_output(output: str) -> tuple[str | None, str | None]:
 
 def cli_binary_candidates() -> list[str]:
     candidates: list[str] = []
-    release_binary = Path(LIGHTPOOL_CLI)
+    release_binary = Path(LIGHTPOOL_BIN)
     if release_binary.is_file():
         candidates.append(str(release_binary))
 
@@ -49,7 +49,7 @@ def cli_binary_candidates() -> list[str]:
     if debug_binary.is_file():
         candidates.append(str(debug_binary))
 
-    found = shutil.which("lightpool-cli")
+    found = shutil.which("lightpool")
     if found and found not in candidates:
         candidates.append(found)
 
@@ -61,8 +61,8 @@ def resolve_cli_binary() -> str:
     if candidates:
         return candidates[0]
     raise FileNotFoundError(
-        "lightpool-cli not found. Run 'cargo build --release' in lightpool-node "
-        "or set LIGHTPOOL_CLI."
+        "lightpool not found. Run 'cargo build --release' in lightpool-node "
+        "or set LIGHTPOOL_BIN."
     )
 
 
@@ -95,7 +95,7 @@ def consensus_pubkey_from_cli(wallet_path: Path) -> str | None:
 def wallet_identity(wallet_path: Path) -> tuple[str, str]:
     if not wallet_path.is_file():
         raise FileNotFoundError(
-            f"Wallet not found at {wallet_path}. Create one with lightpool-cli create-wallet."
+            f"Wallet not found at {wallet_path}. Create one with lightpool create-wallet."
         )
 
     wallet = json.loads(wallet_path.read_text(encoding="utf-8"))
@@ -111,7 +111,7 @@ def wallet_identity(wallet_path: Path) -> tuple[str, str]:
     if not consensus_pubkey:
         raise RuntimeError(
             f"Could not resolve consensus public key for {wallet_path}. "
-            "Recreate the wallet with lightpool-cli create-wallet --force."
+            "Recreate the wallet with lightpool create-wallet --force."
         )
 
     return owner, consensus_pubkey

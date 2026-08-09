@@ -101,6 +101,7 @@ def build_node_spec(
 
 def lightpool_argv(spec: NodeSpec) -> list[str]:
     argv = [
+        "node",
         "--wallet",
         str(spec.wallet_path),
         "--store",

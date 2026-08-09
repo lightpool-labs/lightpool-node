@@ -3,21 +3,18 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-# Decimal amounts are passed directly to lightpool-cli, which converts them
+# Decimal amounts are passed directly to lightpool, which converts them
 # to base units using TOKEN_SCALE (1 token = 1_000_000 base units).
 # Examples: "1" -> 1000000, "0.001" -> 1000
 
 RPC_URL = os.environ.get("LIGHTPOOL_RPC_URL", "http://localhost:26300")
 WALLET_PATH = os.environ.get("LIGHTPOOL_WALLET_PATH")
 
-# Prefer LIGHTPOOL_CLI; otherwise use bin/lightpool-cli under lightpool-node.
+# Prefer LIGHTPOOL_BIN / LIGHTPOOL_CLI; otherwise use bin/lightpool under lightpool-node.
+_NODE_ROOT = Path(__file__).resolve().parents[2]
 CLI_BINARY = os.environ.get(
-    "LIGHTPOOL_CLI",
-    str(
-        Path(__file__).resolve().parents[2]
-        / "bin"
-        / "lightpool-cli"
-    ),
+    "LIGHTPOOL_BIN",
+    os.environ.get("LIGHTPOOL_CLI", str(_NODE_ROOT / "bin" / "lightpool")),
 )
 
 

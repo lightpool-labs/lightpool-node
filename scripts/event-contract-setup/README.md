@@ -9,7 +9,7 @@ Cash collateral is **bridge LP USDT** from `init-bridge`, not the old `create-to
 3. Start LightPool **once** with Link:
 
    ```bash
-   lightpool --role validator --bridge-config ~/work/lightpool-labs/tools/bridge-local/bridge-config.json
+   lightpool node --role validator --bridge-config ~/work/lightpool-labs/tools/bridge-local/bridge-config.json
    ```
 
 4. `python3 00_bridge_bootstrap.py --phase init` — `init-bridge`, set `CASH_TOKEN_ADDRESS` = LP USDT.

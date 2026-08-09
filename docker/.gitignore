@@ -1,0 +1,4 @@
+.env
+bin/lightpool
+bin/lightpool-clob-index
+data/

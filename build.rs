@@ -16,6 +16,7 @@ fn main() {
     let bin_dir = manifest_path.join("bin");
     let node_binary_path = bin_dir.join("lightpool");
     let cli_binary_path = bin_dir.join("lightpool-cli");
+    let clob_binary_path = bin_dir.join("lightpool-clob-index");
     let burst_binary_path = bin_dir.join("burst_client");
 
     register_rerun_paths(&bin_dir);
@@ -26,6 +27,17 @@ fn main() {
             "lightpool-v",
             "lightpool",
             &node_binary_path,
+        ) {
+            println!("cargo:warning={err}");
+        }
+    }
+
+    if !clob_binary_path.exists() {
+        if let Err(err) = extract_binary_from_archive(
+            &bin_dir,
+            "lightpool-clob-index-v",
+            "lightpool-clob-index",
+            &clob_binary_path,
         ) {
             println!("cargo:warning={err}");
         }
@@ -62,6 +74,11 @@ fn main() {
     if !node_binary_path.exists() {
         println!(
             "cargo:warning=bin/lightpool not found; place lightpool-v*.tar.gz in bin/ and run cargo build"
+        );
+    }
+    if !clob_binary_path.exists() {
+        println!(
+            "cargo:warning=bin/lightpool-clob-index not found; place lightpool-clob-index-v*.tar.gz in bin/ and run cargo build"
         );
     }
 }
@@ -116,7 +133,9 @@ fn is_release_archive(path: &Path) -> bool {
     path.file_name()
         .and_then(|name| name.to_str())
         .map(|name| {
-            name.starts_with("lightpool-v") && name.ends_with(".tar.gz")
+            name.ends_with(".tar.gz")
+                && (name.starts_with("lightpool-v")
+                    || name.starts_with("lightpool-clob-index-v"))
         })
         .unwrap_or(false)
 }

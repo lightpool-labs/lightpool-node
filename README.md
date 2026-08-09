@@ -4,24 +4,63 @@ High-Frequency Trading Infrastructure Powered by a Layer 1 Blockchain with 200kt
 
 This project is intended for educational and research purposes only. It is not intended for production deployment, live trading, or commercial use.
 
-## Setup
+## Run on Docker (venue)
+
+Runs **LightPool node + clob-index** via Compose under `docker/`. No EVM / bridge.
+
+Put release tarballs in `bin/` first:
+
+- `lightpool-v*.tar.gz`
+- `lightpool-clob-index-v*.tar.gz`
+
+```shell
+# unpack binaries into bin/ (also writes env.sh locally; not committed)
+cargo build
+source ./env.sh
+
+# optional: same key as docker/.env LIGHTPOOL_PRIVATE_KEY (Anvil #0 example)
+export DEV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+lightpool import-wallet --private-key "$DEV_KEY" --force
+
+cd docker
+[ -f .env ] || cp .env.example .env
+# set LIGHTPOOL_PRIVATE_KEY (same as DEV_KEY for local demo)
+./prepare-binaries.sh
+docker compose down
+# sudo rm -rf ./data/node ./data/clob-index
+docker compose build --no-cache
+docker compose up -d
+```
+
+Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
+
+```shell
+# seed USDT for bot / app (from lightpool-node root, with env.sh sourced)
+./scripts/bot-testing/seed_dev_markets.sh
+
+docker compose -f docker/docker-compose.yml logs -f
+docker compose -f docker/docker-compose.yml down
+```
+
+`--no-cache` builds use host proxy `http://127.0.0.1:8118` by default (`HTTP_PROXY` in `docker/.env`).
+
+## Setup (binaries on PATH)
 
 This package does **not** need LightPool source code. Put prebuilt release artifacts in `bin/`:
 
 - `lightpool-v*.tar.gz` — extracted to `bin/lightpool` on build
+- `lightpool-clob-index-v*.tar.gz` — extracted to `bin/lightpool-clob-index` on build
 - `burst_client` — prebuilt binary placed directly at `bin/burst_client`
 
-  You can build `burst_client` from
-  [lightpool-sdk-rust](https://github.com/lightpool-labs/lightpool-sdk-rust)
-  ([`examples/burst_client.rs`](https://github.com/lightpool-labs/lightpool-sdk-rust/blob/main/examples/burst_client.rs)):
+Build clob-index tarball from `lightpool-clob-index`:
 
-  ```shell
-  # in lightpool-sdk-rust
-  cargo build --release --example burst_client
-  cp target/release/examples/burst_client /path/to/lightpool-node/bin/burst_client
-  ```
+```shell
+cd ../lightpool-clob-index
+./build/build-release.sh
+cp target/lightpool-clob-index-v*.tar.gz ../lightpool-node/bin/
+```
 
-Extract packages and generate `env.sh` (adds `bin/` to `PATH`):
+Extract packages and generate `env.sh` (adds `bin/` to `PATH`; gitignored):
 
 ```shell
 cargo build --release
@@ -31,9 +70,10 @@ source ./env.sh
 After that, these commands are available on `PATH`:
 
 - `lightpool` (node + client subcommands)
+- `lightpool-clob-index`
 - `burst_client`
 
-Local network scripts also resolve these binaries under `bin/` directly. You can override with `LIGHTPOOL_BIN` or `BURST_CLIENT_BIN`.
+Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` / `BURST_CLIENT_BIN` if needed.
 
 ## Single Node: Wallet, Token, and Transfer
 

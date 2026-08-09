@@ -1,4 +1,4 @@
-# Two Nodes: Local Network
+# Two Nodes
 
 Run two validators locally. node0 starts alone and produces the first checkpoint at block 1000; node1 joins afterward via state sync and staking. After the second epoch (~block 2000), both nodes should propose.
 

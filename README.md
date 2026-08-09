@@ -4,41 +4,6 @@ High-Frequency Trading Infrastructure Powered by a Layer 1 Blockchain with 200kt
 
 This project is intended for educational and research purposes only. It is not intended for production deployment, live trading, or commercial use.
 
-## Run on Docker (venue)
-
-Runs **LightPool node + clob-index** via Compose under `docker/`.
-
-Put release tarballs in `bin/` first:
-
-- `lightpool-v*.tar.gz`
-- `lightpool-clob-index-v*.tar.gz`
-
-```shell
-# unpack binaries into bin/ (also writes env.sh locally; not committed)
-cargo build
-source ./env.sh
-
-# same key as docker/.env LIGHTPOOL_PRIVATE_KEY
-export DEV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-lightpool import-wallet --private-key "$DEV_KEY" --force
-
-cd docker
-[ -f .env ] || cp .env.example .env
-# set LIGHTPOOL_PRIVATE_KEY (same as DEV_KEY)
-./prepare-binaries.sh
-docker compose down
-# sudo rm -rf ./data/node ./data/clob-index
-# --no-cache rebuilds base layers; apt download can be slow the first time
-docker compose build --no-cache
-docker compose up -d
-```
-
-Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
-
-`--no-cache` may download slowly (Ubuntu packages). Builds use host proxy `http://127.0.0.1:8118` by default (`HTTP_PROXY` in `docker/.env`); start the proxy first if you need it. For a faster rebuild when images already exist, omit `--no-cache`.
-
-Next: create a token and transfer — see [`doc/create-token-and-transfer.md`](doc/create-token-and-transfer.md).
-
 ## Setup (binaries on PATH)
 
 This package does **not** need LightPool source code. Put prebuilt release artifacts in `bin/`:
@@ -70,6 +35,32 @@ After that, these commands are available on `PATH`:
 
 Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` / `BURST_CLIENT_BIN` if needed.
 
-## Two Nodes: Local Network
+## Run one node on Docker
 
-See [`doc/two-nodes-local-network.md`](doc/two-nodes-local-network.md).
+Runs **one LightPool node + clob-index** via Compose under `docker/`. Finish [Setup](#setup-binaries-on-path) first (`bin/lightpool` and `bin/lightpool-clob-index` present).
+
+```shell
+# same key as docker/.env LIGHTPOOL_PRIVATE_KEY
+export DEV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+lightpool import-wallet --private-key "$DEV_KEY" --force
+
+cd docker
+[ -f .env ] || cp .env.example .env
+# set LIGHTPOOL_PRIVATE_KEY (same as DEV_KEY)
+./prepare-binaries.sh
+docker compose down
+# sudo rm -rf ./data/node ./data/clob-index
+# --no-cache rebuilds base layers; apt download can be slow the first time
+docker compose build --no-cache
+docker compose up -d
+```
+
+Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
+
+`--no-cache` may download slowly (Ubuntu packages). Builds use host proxy `http://127.0.0.1:8118` by default (`HTTP_PROXY` in `docker/.env`); start the proxy first if you need it. For a faster rebuild when images already exist, omit `--no-cache`.
+
+Next: create a token and transfer — see [`doc/create-token-and-transfer.md`](doc/create-token-and-transfer.md).
+
+## Two Nodes
+
+See [`doc/two-nodes.md`](doc/two-nodes.md).

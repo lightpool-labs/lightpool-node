@@ -6,7 +6,7 @@ This project is intended for educational and research purposes only. It is not i
 
 ## Run on Docker (venue)
 
-Runs **LightPool node + clob-index** via Compose under `docker/`. No EVM / bridge.
+Runs **LightPool node + clob-index** via Compose under `docker/`.
 
 Put release tarballs in `bin/` first:
 
@@ -18,13 +18,13 @@ Put release tarballs in `bin/` first:
 cargo build
 source ./env.sh
 
-# optional: same key as docker/.env LIGHTPOOL_PRIVATE_KEY (Anvil #0 example)
+# same key as docker/.env LIGHTPOOL_PRIVATE_KEY
 export DEV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 lightpool import-wallet --private-key "$DEV_KEY" --force
 
 cd docker
 [ -f .env ] || cp .env.example .env
-# set LIGHTPOOL_PRIVATE_KEY (same as DEV_KEY for local demo)
+# set LIGHTPOOL_PRIVATE_KEY (same as DEV_KEY)
 ./prepare-binaries.sh
 docker compose down
 # sudo rm -rf ./data/node ./data/clob-index
@@ -34,15 +34,9 @@ docker compose up -d
 
 Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
 
-```shell
-# seed USDT for bot / app (from lightpool-node root, with env.sh sourced)
-./scripts/bot-testing/seed_dev_markets.sh
-
-docker compose -f docker/docker-compose.yml logs -f
-docker compose -f docker/docker-compose.yml down
-```
-
 `--no-cache` builds use host proxy `http://127.0.0.1:8118` by default (`HTTP_PROXY` in `docker/.env`).
+
+Next: create a token and transfer — see [`doc/create-token-and-transfer.md`](doc/create-token-and-transfer.md).
 
 ## Setup (binaries on PATH)
 
@@ -74,70 +68,6 @@ After that, these commands are available on `PATH`:
 - `burst_client`
 
 Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` / `BURST_CLIENT_BIN` if needed.
-
-## Single Node: Wallet, Token, and Transfer
-
-This example runs one validator locally, creates a token, and transfers tokens to a second wallet.
-
-### 1. Create wallet
-
-```shell
-lightpool create-wallet --force
-lightpool address
-```
-
-### 2. Run the node
-
-In one terminal:
-
-```shell
-lightpool node
-```
-
-Press Ctrl+C to stop the node.
-
-### 3. Create a token
-
-In another terminal:
-
-```shell
-lightpool create-token \
-  --name "Example Token" \
-  --symbol "EXT" \
-  --total-supply "1000000" \
-  --mintable
-```
-
-Copy the token contract address from the command output.
-
-### 4. Transfer tokens
-
-Create a recipient wallet and transfer tokens:
-
-```shell
-mkdir -p data/recipient
-
-lightpool create-wallet --force --wallet-path data/recipient/wallet.json
-lightpool address --wallet-path data/recipient/wallet.json
-
-lightpool transfer \
-  --token-address "TOKEN_ADDRESS" \
-  --to "RECIPIENT_ADDRESS" \
-  --amount "100"
-```
-
-Replace `TOKEN_ADDRESS` and `RECIPIENT_ADDRESS` from the command output.
-
-Check balances:
-
-```shell
-lightpool balance \
-  --token-address "TOKEN_ADDRESS"
-
-lightpool balance \
-  --token-address "TOKEN_ADDRESS" \
-  --account "RECIPIENT_ADDRESS"
-```
 
 ## Two Nodes: Local Network
 

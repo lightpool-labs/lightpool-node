@@ -4,8 +4,8 @@ Endpoint: `POST /api/tx/submit`
 Base URL (local): `http://127.0.0.1:3002`
 
 The app **builds and signs** the transaction with **`lightpool-sdk`**
-(`lightpool-sdk-rust`), then POSTs the signed payload here. Do not invent the
-`tx` JSON by hand.
+([lightpool-sdk-rust](https://github.com/lightpool-labs/lightpool-sdk-rust)),
+then POSTs the signed payload here. Do not invent the `tx` JSON by hand.
 
 ---
 
@@ -49,7 +49,8 @@ failed receipts as success.
 
 ## Build `tx` with lightpool-sdk (required)
 
-Package: **`lightpool-sdk-rust`** (crate `lightpool_sdk`).
+Package: **[lightpool-sdk-rust](https://github.com/lightpool-labs/lightpool-sdk-rust)**
+(crate `lightpool_sdk`).
 
 ### Types
 

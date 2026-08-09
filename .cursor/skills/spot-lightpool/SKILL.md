@@ -1,5 +1,5 @@
 ---
-name: open-box-lightpool
+name: spot-lightpool
 description: >-
   Integrate an external app with a local LightPool spot orderbook via
   clob-index HTTP/WS and lightpool-sdk signed submit. Use when an AI agent

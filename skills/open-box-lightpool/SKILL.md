@@ -23,6 +23,38 @@ Human ops for unpacking binaries / starting Docker / seeding tokens and markets
 live in `lightpool-node/README.md` and `doc/`. This skill does **not** teach CLI
 workflows.
 
+## How the agent finds details (after reading this skill)
+
+This skill is a **map**, not the schema dump. For field-level structs and route
+handlers, **open the sibling repo source** (same `lightpool-labs` workspace):
+
+| Need | Open / search |
+|------|----------------|
+| Route table (`/markets`, `/spot`, `/tx`, `/ws`, …) | `lightpool-clob-index/src/http/mod.rs` then `src/http/routes/*.rs` |
+| HTTP request/response structs | `lightpool-clob-index/src/http/models/` (`mod.rs` re-exports) |
+| Submit body | `lightpool-clob-index/src/http/models/tx.rs` → `SubmitTxRequest.tx` |
+| Submit handler | `lightpool-clob-index/src/http/routes/tx.rs` |
+| Spot book/info HTTP | `…/http/routes/spot.rs` + `…/http/models/spot.rs` |
+| WS inbound subscribe | `lightpool-clob-index/src/ws/models/request.rs` → `WsRequest` |
+| WS outbound payloads | `…/ws/models/orderbook.rs`, `quote.rs`, `user.rs` |
+| WS dispatch | `lightpool-clob-index/src/ws/mod.rs` |
+| `SignedTransaction` / `PlaceOrderParams` | `lightpool-sdk-rust` (or `lightpool/crates/lightpool-sdk`) — search `SignedTransaction`, `PlaceOrderParams` |
+| Endpoint cheat-sheet (this skill) | [api-reference.md](api-reference.md) |
+| Sign/submit patterns (this skill) | [examples.md](examples.md) |
+
+**Procedure for the agent:**
+
+1. Read [api-reference.md](api-reference.md) for the path list.
+2. Open the matching file under `lightpool-clob-index/src/http/models/` or
+   `…/ws/models/` for serde structs (source of truth).
+3. Open the matching `routes/*.rs` to see query params and status behavior.
+4. For signed txs, follow `SubmitTxRequest.tx` into `lightpool-sdk` types; do not
+   invent JSON shapes.
+5. If `lightpool-clob-index` is not in the workspace, clone/open that package next
+   to `lightpool-node` before implementing.
+
+Do **not** rely on `lightpool-clob-index/README.md` for schema (it may be empty).
+
 ## Integration path
 
 ```

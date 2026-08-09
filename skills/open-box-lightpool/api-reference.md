@@ -6,6 +6,21 @@ All HTTP routes below are under `/api`.
 Upstream node is configured on clob-index (`LIGHTPOOL_RPC_URL` /
 `LIGHTPOOL_WS_URL`). The **app never calls the node**.
 
+## Where structs live (source of truth)
+
+Skill tables below are summaries. **Read these files for real fields:**
+
+| Topic | Path under `lightpool-clob-index/` |
+|-------|-------------------------------------|
+| Nest routes | `src/http/mod.rs` |
+| HTTP models index | `src/http/models/mod.rs` |
+| Submit | `src/http/models/tx.rs`, `src/http/routes/tx.rs` |
+| Spot HTTP | `src/http/models/spot.rs`, `src/http/routes/spot.rs` |
+| Markets / accounts / orders | `src/http/models/{markets,accounts,orders}.rs` + matching `routes/` |
+| WS request | `src/ws/models/request.rs` |
+| WS book/quote/user | `src/ws/models/{orderbook,quote,user}.rs` |
+| `SignedTransaction` | `lightpool-sdk` / `lightpool-sdk-rust` (not defined in clob-index) |
+
 ## HTTP
 
 | Method | Path | Purpose |

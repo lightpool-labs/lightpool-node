@@ -2,15 +2,16 @@
 
 Cursor plugin that teaches Agent how to integrate an app with **LightPool spot**.
 
-**LightPool is a blockchain L1** with an **on-chain orderbook**: spot CLOB
-**matching and settlement** both run on chain (base/quote, e.g. AAPL/USDT).
-Apps do not call the node RPC/WS directly; they use a deployed **clob-index**
-(HTTP/WS) for market data and `POST /api/tx/submit`, and sign txs with
-`lightpool-sdk`.
+**LightPool is a blockchain L1** targeting **200k TPS**, with an **on-chain
+orderbook**: spot CLOB **matching and settlement** both run on chain
+(base/quote, e.g. AAPL/USDT). Apps do not call the node RPC/WS directly; they
+use a deployed **clob-index** (HTTP/WS) for market data and
+`POST /api/tx/submit`, and sign txs with `lightpool-sdk`.
 
 ## Contents
 
 - Skill: `skills/spot-lightpool/` (`SKILL.md`, `http.md`, `ws.md`, `tx-submit.md`)
+- Logo: `assets/logo.svg` (icon), `assets/logo-wordmark.svg` (mark + wordmark)
 
 ## Deploy the L1 venue
 

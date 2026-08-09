@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LightPool">
+  <defs>
+    <linearGradient id="lp-bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B1F1C"/>
+      <stop offset="100%" stop-color="#061210"/>
+    </linearGradient>
+    <linearGradient id="lp-accent" x1="120" y1="120" x2="392" y2="392" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3DFFC0"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- App-icon style tile -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#lp-bg)"/>
+
+  <!-- Orderbook depth bars (asks / bids metaphor) -->
+  <g fill="url(#lp-accent)">
+    <rect x="125" y="168" width="52" height="176" rx="10"/>
+    <rect x="195" y="128" width="52" height="216" rx="10"/>
+    <rect x="265" y="196" width="52" height="148" rx="10"/>
+    <rect x="335" y="148" width="52" height="196" rx="10"/>
+  </g>
+</svg>

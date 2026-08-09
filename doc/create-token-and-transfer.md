@@ -32,21 +32,19 @@ lightpool balance --token-address "0x0200000000000001"
 mkdir -p data/recipient
 
 lightpool create-wallet --force --wallet-path data/recipient/wallet.json
-lightpool address --wallet-path data/recipient/wallet.json
+export RECIPIENT=$(lightpool address --wallet-path data/recipient/wallet.json | grep -oE '0x[0-9a-fA-F]{40}' | head -1)
 
 lightpool transfer \
   --token-address "0x0200000000000001" \
-  --to "RECIPIENT_ADDRESS" \
+  --to "$RECIPIENT" \
   --amount "100"
 ```
-
-Replace `RECIPIENT_ADDRESS` with the address from the previous command.
 
 ```shell
 lightpool balance --token-address "0x0200000000000001"
 lightpool balance \
   --token-address "0x0200000000000001" \
-  --account "RECIPIENT_ADDRESS"
+  --account "$RECIPIENT"
 ```
 
 ## 4. Optional mint
@@ -56,3 +54,5 @@ lightpool mint \
   --token-address "0x0200000000000001" \
   --amount "1000"
 ```
+
+Next: spot market (create, place, fill) — see [`spot-create-place-fill.md`](spot-create-place-fill.md).

@@ -61,6 +61,8 @@ Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
 
 Next: create a token and transfer — see [`doc/create-token-and-transfer.md`](doc/create-token-and-transfer.md).
 
-## Two Nodes
+Next: spot market (create, place, fill) — see [`doc/spot-create-place-fill.md`](doc/spot-create-place-fill.md).
+
+## Run two nodes
 
 See [`doc/two-nodes.md`](doc/two-nodes.md).

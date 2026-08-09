@@ -1,62 +1,55 @@
-# UC2 examples — open-box spot
+# App integration patterns (UC2 spot)
 
-Assumes one node is already up (Docker Compose under `docker/`) and:
+Venue assumed running: clob-index at `http://127.0.0.1:3002`.
 
-```bash
-cd ~/work/lightpool-labs/lightpool-node
-source ./env.sh
+## Discover markets
+
+```http
+GET /api/markets?limit=20
+GET /api/markets/slug/<slug>
+GET /api/spot/<spot_market>/info
 ```
 
-## Minimal: token + spot market
+Use returned `ContractAddress` values for base, quote, and spot market in the app.
 
-```bash
-lightpool create-token --name USDT --symbol USDT --total-supply 10000000000 --mintable
-# copy Token Address → USDT
+## Read the book
 
-lightpool create-token --name Apple --symbol AAPL --total-supply 1000000 --mintable
-# copy Token Address → AAPL
-
-lightpool create-spot-market \
-  --name AAPL/USDT \
-  --base-token "$AAPL" \
-  --quote-token "$USDT" \
-  --allow-market-orders
-# copy Spot Market → SPOT
-
-lightpool get-book --spot-market "$SPOT"
+```http
+GET /api/spot/<spot_market>/book?depth=10
 ```
 
-## Transfer quote to another wallet
+Live:
 
-```bash
-export TAKER_WALLET="$HOME/.lightpool/taker/wallet.json"
-mkdir -p "$(dirname "$TAKER_WALLET")"
-lightpool create-wallet --force --wallet-path "$TAKER_WALLET"
-export TAKER=$(lightpool address --wallet-path "$TAKER_WALLET" | grep -oE '0x[0-9a-fA-F]{40}' | head -1)
-
-lightpool transfer --token-address "$USDT" --to "$TAKER" --amount 100000
-lightpool balance --token-address "$USDT" --account "$TAKER"
+```json
+{
+  "op": "subscribe",
+  "channel": "orderbook_delta",
+  "spot_market": "<spot ContractAddress>",
+  "depth": 10
+}
 ```
 
-## Place sell then fill with buy
+## Submit a signed place_order
 
-```bash
-# maker (default wallet) — locks AAPL
-lightpool place-order \
-  --spot-market "$SPOT" --side sell --amount 10 --price 190 \
-  --token-address "$AAPL" --tif gtc
+1. Build `PlaceOrderParams` + `ActionBuilder::place_order(spot_market, params)`.
+2. `TransactionBuilder` → `build_and_sign_only(&signer)`.
+3. `POST /api/tx/submit` with body `{ "tx": <SignedTransaction> }`.
+4. On success, parse receipt / follow WS `user` for confirmation.
 
-# taker — locks USDT
-lightpool place-order \
-  --wallet-path "$TAKER_WALLET" \
-  --spot-market "$SPOT" --side buy --amount 5 --price 190 \
-  --token-address "$USDT" --tif ioc
+Sell locks **base** token; buy locks **quote** token (`token_address` field).
 
-lightpool get-book --spot-market "$SPOT" --depth 10
+## Balances
+
+```http
+POST /api/accounts/<user_address>/balances
 ```
 
-## Mint more quote (if mintable)
+(Request body shape: token specs as required by clob-index accounts API.)
 
-```bash
-lightpool mint --token-address "$USDT" --amount 1000
-```
+## SDK crate map
+
+| Piece | Location |
+|-------|----------|
+| Signing SDK | `lightpool-sdk-rust` (`lightpool_sdk`) |
+| Indexer HTTP/WS | `lightpool-clob-index` |
+| Local venue package | `lightpool-node` (Docker node + clob-index) |

@@ -1,199 +1,130 @@
 ---
 name: open-box-lightpool
 description: >-
-  UC2 open-box: an engineer unpacks lightpool-node, runs one local node
-  (Docker), then uses the lightpool CLI to create tokens and a spot market
-  (e.g. AAPL/USDT), place orders, and fill. Use when setting up LightPool
-  locally for spot CLOB demos — not for bridge, EVM, or app integration via
-  clob-index APIs.
+  UC2: integrate an external app with a local LightPool spot orderbook via
+  lightpool-clob-index HTTP/WS APIs and lightpool-sdk signing. Use when an AI
+  agent builds or wires an app against local node + clob-index for spot markets
+  (tokens + CLOB such as AAPL/USDT): discover markets, read books, submit signed
+  txs, subscribe to orderbook feeds.
 ---
 
-# UC2 — Open the box: token + spot market
+# UC2 — Integrate an app with LightPool (spot)
 
-**Audience:** engineer who receives `lightpool-node` and should be able to run
-LightPool and trade a **spot** CLOB (base/quote, e.g. Apple vs USDT).
+This skill is for **AI agents** wiring an **application** to LightPool.
 
-**Not this skill:** prediction-market event contracts, EVM bridge, MetaMask,
-or integrating an external app through clob-index HTTP/WS.
+**UC2 open-box context:** a local LightPool stack is available (`lightpool-node`
+Docker: node + clob-index). The chain supports **spot** markets (base/quote CLOB,
+e.g. AAPL/USDT) after tokens and a spot market exist on that venue.
 
-LightPool is still in development; there is **no production** network. Run
-everything locally.
+LightPool is still in development; there is **no production** hosted endpoint.
+The app talks only to **local clob-index**. Do not call node RPC/WS from the app.
 
-## Goal
+Human ops for unpacking binaries / starting Docker / seeding tokens and markets
+live in `lightpool-node/README.md` and `doc/`. This skill does **not** teach CLI
+workflows.
 
-1. Unpack binaries and put `lightpool` on `PATH`
-2. Run **one node + clob-index** with Docker
-3. `create-token` (quote + base)
-4. `create-spot-market` (e.g. AAPL/USDT)
-5. Optional: fund a second trader, `place-order`, fill, `get-book`
+## Integration path
 
-## Package layout
+```
+App ──HTTP/WS──► lightpool-clob-index (:3002)
+                      │
+                      ▼
+                 lightpool node (:26300 / :26400)
+```
 
-| Path | Role |
-|------|------|
-| `lightpool-node/` | Release package (this repo) |
-| `lightpool-node/bin/` | Place `lightpool-v*.tar.gz` and `lightpool-clob-index-v*.tar.gz` |
-| `lightpool-node/docker/` | Compose: one node + clob-index |
-| `lightpool-node/doc/create-token-and-transfer.md` | Token / transfer manual |
-| `lightpool-node/doc/spot-create-place-fill.md` | Spot create / place / fill manual |
-
-No LightPool **source** tree is required to run the release package.
+1. Assume local venue is up: clob-index `http://127.0.0.1:3002`, WS
+   `ws://127.0.0.1:3002/api/ws`.
+2. App holds a user `Signer` (offline). Derive user `Address`.
+3. Discover spot markets / instruments via clob-index HTTP.
+4. Read books: `GET /api/spot/:spot_market/book` or WS `orderbook_delta`.
+5. Build actions with `lightpool-sdk` (`ActionBuilder` / `TransactionBuilder`),
+   sign offline, `POST /api/tx/submit`.
+6. Track fills / user updates via WS `user` and order/balance HTTP as needed.
 
 ## Critical types
 
 | Type | Meaning |
 |------|---------|
-| `Address` | User / wallet (20-byte `0x…`) |
-| `ContractAddress` | Token or spot market (8-byte module-prefixed `0x…`) |
+| `Address` | User account (20 bytes, Ethereum-style `0x…`) |
+| `ContractAddress` | Token, spot market, … (8 bytes, module-prefixed `0x…`) |
 
-Do not mix them. Spot market addresses are typically `0x03…`; tokens `0x02…`.
+Spot markets are typically `0x03…`; tokens `0x02…`. Never treat them as
+interchangeable.
 
-## 1) Setup (binaries on PATH)
+## App must use clob-index
 
-```bash
-cd ~/work/lightpool-labs/lightpool-node
+| Concern | App uses |
+|---------|----------|
+| Market list / metadata | `GET /api/markets`, `/api/markets/slug/:slug`, `/api/spot/:spot_market/info` |
+| Order book snapshot | `GET /api/spot/:spot_market/book` |
+| Live book / quotes | WS `orderbook_delta`, `quote` |
+| User-scoped updates | WS `user` |
+| Balances | `POST /api/accounts/:address/balances` |
+| Orders index | `GET /api/orders`, `/api/orders/query` |
+| Execution | Sign with SDK → `POST /api/tx/submit` |
 
-# Put release archives in bin/ first:
-#   lightpool-v*.tar.gz
-#   lightpool-clob-index-v*.tar.gz
+Do **not** point the app at node `submitTransaction` / node WS.
 
-cargo build --release
-source ./env.sh
+## Sign then submit
 
-lightpool --help
+Crate: `lightpool-sdk` (package `lightpool-sdk-rust`).
+
+```rust
+use lightpool_sdk::{
+    ActionBuilder, OrderParamsType, OrderSide, PlaceOrderParams,
+    Signer, TimeInForce, TransactionBuilder,
+};
+
+let signer = /* load app user key */;
+let action = ActionBuilder::place_order(
+    spot_market, // ContractAddress of the spot market
+    PlaceOrderParams {
+        side: OrderSide::Buy, // or Sell
+        amount: /* scaled size */,
+        order_type: OrderParamsType::Limit {
+            tif: TimeInForce::GTC,
+        },
+        limit_price: /* scaled price */,
+        // Sell locks base token; Buy locks quote token
+        token_address: quote_or_base_token,
+    },
+)?;
+
+let tx = TransactionBuilder::new()
+    .sender(signer.address())
+    .expiration(u64::MAX)
+    .add_action(action)
+    .build_and_sign_only(&signer)?;
+
+// POST JSON { "tx": <SignedTransaction> } to
+// http://127.0.0.1:3002/api/tx/submit
 ```
 
-`env.sh` is generated by `cargo build` (gitignored). It prepends `bin/` to `PATH`.
+Other common writes the app may sign the same way: `cancel_order`,
+`update_order`, `place_order_group`, token `transfer` / `mint` when the product
+requires it. Prefer market metadata from clob-index when sizing amounts/prices
+(on-chain integer scale).
 
-Needs a `lightpool` build that includes `create-spot-market` and `place-order`.
+## Agent rules
 
-## 2) Run one node on Docker
+When implementing or reviewing app integration:
 
-Align host wallet with Compose key, then start:
+1. Default base URL: `http://127.0.0.1:3002` (routes under `/api`).
+2. Wire market data and execution through clob-index only.
+3. Keep signing offline with `lightpool-sdk`; never embed node RPC clients in the app path.
+4. Model spot instruments with separate `ContractAddress` for base, quote, and spot market.
+5. For UC2 spot demos, assume tokens + spot market already exist on the local venue (seeded by operators); the app discovers them via `/api/markets` or known addresses.
+6. No production LightPool URL — local / self-hosted only.
 
-```bash
-export DEV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-lightpool import-wallet --private-key "$DEV_KEY" --force
+## Package map
 
-cd docker
-[ -f .env ] || cp .env.example .env
-# LIGHTPOOL_PRIVATE_KEY must match DEV_KEY
-./prepare-binaries.sh
-docker compose down
-# sudo rm -rf ./data/node ./data/clob-index   # wipe chain if needed
-docker compose build --no-cache   # first build may download slowly
-docker compose up -d
-```
-
-Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
-
-**CLI work is not done inside `docker/`.** After Compose is up, go back to the
-package root for `lightpool` client commands.
-
-```bash
-cd ~/work/lightpool-labs/lightpool-node
-source ./env.sh
-```
-
-## 3) Create tokens (quote + base)
-
-```bash
-lightpool create-token \
-  --name "USDT" \
-  --symbol "USDT" \
-  --total-supply "10000000000" \
-  --mintable | tee /tmp/create-usdt.out
-export USDT=$(grep -oE '0x02[0-9a-fA-F]{14}' /tmp/create-usdt.out | head -1)
-
-lightpool create-token \
-  --name "Apple" \
-  --symbol "AAPL" \
-  --total-supply "1000000" \
-  --mintable | tee /tmp/create-aapl.out
-export AAPL=$(grep -oE '0x02[0-9a-fA-F]{14}' /tmp/create-aapl.out | head -1)
-
-echo "USDT=$USDT AAPL=$AAPL"
-lightpool balance --token-address "$USDT"
-lightpool balance --token-address "$AAPL"
-```
-
-On a fresh chain the first token is often `0x0200000000000001`. Prefer printed
-addresses. Details: `doc/create-token-and-transfer.md`.
-
-## 4) Create spot market
-
-```bash
-lightpool create-spot-market \
-  --name "AAPL/USDT" \
-  --base-token "$AAPL" \
-  --quote-token "$USDT" \
-  --tick-size "0.01" \
-  --min-order-size "0.1" \
-  --allow-market-orders | tee /tmp/create-spot.out
-
-export SPOT=$(grep -oE '0x03[0-9a-fA-F]{14}' /tmp/create-spot.out | head -1)
-echo "SPOT=$SPOT"
-```
-
-Or copy the printed `Spot Market` line into `export SPOT=...`.
-
-## 5) Place and fill (optional)
-
-Fund a second trader with an absolute wallet path:
-
-```bash
-export TAKER_WALLET="$HOME/.lightpool/taker/wallet.json"
-mkdir -p "$(dirname "$TAKER_WALLET")"
-lightpool create-wallet --force --wallet-path "$TAKER_WALLET"
-export TAKER=$(lightpool address --wallet-path "$TAKER_WALLET" | grep -oE '0x[0-9a-fA-F]{40}' | head -1)
-
-lightpool transfer --token-address "$USDT" --to "$TAKER" --amount "100000"
-```
-
-Maker sells base; taker buys with quote:
-
-```bash
-lightpool place-order \
-  --spot-market "$SPOT" --side sell --amount "10" --price "190" \
-  --token-address "$AAPL" --tif gtc
-
-lightpool place-order \
-  --wallet-path "$TAKER_WALLET" \
-  --spot-market "$SPOT" --side buy --amount "5" --price "190" \
-  --token-address "$USDT" --tif ioc
-
-lightpool get-book --spot-market "$SPOT" --depth 10
-```
-
-Full steps: `doc/spot-create-place-fill.md`.
-
-## Do
-
-- Run client commands from the **package root** (`source ./env.sh`)
-- Use `create-spot-market` for spot CLOB (AAPL/USDT), not `create-market` (event)
-- Keep Docker `LIGHTPOOL_PRIVATE_KEY` equal to the host imported wallet
-
-## Do not
-
-- Treat `create-market` as spot (that command creates an **event contract**)
-- Put taker wallets under `docker/data/` (container volume; permission issues)
-- Assume a hosted / production LightPool endpoint exists
-- Pull in bridge / Reth / MetaMask for this UC2 path
-
-## Agent checklist
-
-When helping an engineer on UC2:
-
-1. Confirm `lightpool` on PATH and node RPC reachable (`http://127.0.0.1:26300`)
-2. Create quote + base tokens; export `USDT` / `AAPL`
-3. `create-spot-market`; export `SPOT`
-4. If they want a fill: taker wallet under `$HOME/.lightpool/…`, transfer quote, place sell then buy
-5. Verify with `get-book` and `balance`
+| Package | Role for the app |
+|---------|------------------|
+| `lightpool-node` | Local venue (node + Docker); ops docs for humans |
+| `lightpool-clob-index` | App-facing HTTP/WS (`:3002`) |
+| `lightpool-sdk-rust` | Offline tx signing |
 
 ## Additional resources
 
-- Command cookbook: [examples.md](examples.md)
-- CLI quick reference: [cli-reference.md](cli-reference.md)
-- Package README: `../../README.md`
-- Token manual: `../../doc/create-token-and-transfer.md`
-- Spot manual: `../../doc/spot-create-place-fill.md`
+- Endpoint table: [api-reference.md](api-reference.md)
+- Signing / submit patterns: [examples.md](examples.md)

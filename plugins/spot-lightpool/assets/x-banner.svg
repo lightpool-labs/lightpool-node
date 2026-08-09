@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="500" viewBox="0 0 1500 500" role="img" aria-label="LightPool">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1500" y2="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B1F1C"/>
+      <stop offset="55%" stop-color="#081816"/>
+      <stop offset="100%" stop-color="#061210"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="860" y1="60" x2="1440" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3DFFC0"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="1180" cy="220" r="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14B8A6" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#061210" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1500" height="500" fill="url(#bg)"/>
+  <rect width="1500" height="500" fill="url(#glow)"/>
+
+  <!-- Cap-top of "LightPool" aligns with tallest bar top (y=120) -->
+  <text
+    x="96"
+    y="192"
+    fill="#E8FFF6"
+    font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"
+    font-size="96"
+    font-weight="700"
+    letter-spacing="-2"
+  >LightPool</text>
+
+  <text
+    x="100"
+    y="262"
+    fill="#7AB8A8"
+    font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif"
+    font-size="34"
+    font-weight="500"
+    letter-spacing="0.5"
+  >On-chain orderbook L1</text>
+
+  <!-- Eight orderbook bars; bottom-aligned -->
+  <g fill="url(#accent)">
+    <rect x="860"  y="210" width="56" height="170" rx="12"/>
+    <rect x="934"  y="150" width="56" height="230" rx="12"/>
+    <rect x="1008" y="235" width="56" height="145" rx="12"/>
+    <rect x="1082" y="120" width="56" height="260" rx="12"/>
+    <rect x="1156" y="195" width="56" height="185" rx="12"/>
+    <rect x="1230" y="140" width="56" height="240" rx="12"/>
+    <rect x="1304" y="250" width="56" height="130" rx="12"/>
+    <rect x="1378" y="165" width="56" height="215" rx="12"/>
+  </g>
+</svg>

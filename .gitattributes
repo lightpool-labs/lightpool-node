@@ -1,0 +1,12 @@
+# Release package: Rust is the product language. Ops/helper scripts should not
+# dominate GitHub's language bar.
+scripts/** linguist-vendored
+*.py linguist-vendored
+*.sh linguist-vendored
+*.bash linguist-vendored
+
+# Assets / docs are not source language signal
+*.md linguist-documentation
+*.svg linguist-vendored
+*.png linguist-vendored
+plugins/** linguist-documentation

@@ -2,65 +2,66 @@
 
 Requires a running node (Docker one-node in `docker/`, or `lightpool node`).
 
+Needs a `lightpool` build that includes `create-spot-market` and `place-order` (rebuild from the `lightpool` repo, then refresh `lightpool-node/bin/` / Docker binaries).
+
 From the `lightpool-node` root:
 
 ```shell
 source ./env.sh
 ```
 
-Collateral USDT should already exist — see [`create-token-and-transfer.md`](create-token-and-transfer.md). On a fresh chain the first token is usually `0x0200000000000001`.
-
-`lightpool create-market` creates an **event contract**. That also creates YES/NO **spot** order books. You mint a complete set (YES + NO), then trade YES (or NO) on its spot market. Matching happens when a resting order and a crossing order meet.
+This flow creates a **spot** CLOB (example: **AAPL/USDT**), not an event contract.
 
 ---
 
-## 1. Create market
+## 1. Create base and quote tokens
 
 ```shell
-export COLLATERAL=0x0200000000000001
-export DEADLINE=$(date -u -d '+30 days' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v+30d +%Y-%m-%dT%H:%M:%SZ)
+# Quote (cash)
+lightpool create-token \
+  --name "USDT" \
+  --symbol "USDT" \
+  --total-supply "10000000000" \
+  --mintable | tee /tmp/create-usdt.out
+export USDT=$(grep -oE '0x02[0-9a-fA-F]{14}' /tmp/create-usdt.out | head -1)
+echo "USDT=$USDT"
 
-lightpool create-market \
-  --question "Will it rain in SF tomorrow?" \
-  --collateral-token "$COLLATERAL" \
-  --resolution-deadline "$DEADLINE" \
+# Base (e.g. Apple stock token)
+lightpool create-token \
+  --name "Apple" \
+  --symbol "AAPL" \
+  --total-supply "1000000" \
+  --mintable | tee /tmp/create-aapl.out
+export AAPL=$(grep -oE '0x02[0-9a-fA-F]{14}' /tmp/create-aapl.out | head -1)
+echo "AAPL=$AAPL"
+```
+
+On a fresh chain the first token is often `0x0200000000000001` (USDT), the second `0x0200000000000002` (AAPL). Prefer the addresses printed above.
+
+---
+
+## 2. Create the spot market (AAPL/USDT)
+
+```shell
+lightpool create-spot-market \
+  --name "AAPL/USDT" \
+  --base-token "$AAPL" \
+  --quote-token "$USDT" \
   --tick-size "0.01" \
   --min-order-size "0.1" \
-  --allow-market-orders | tee /tmp/create-market.out
+  --allow-market-orders | tee /tmp/create-spot.out
 
-export MARKET=$(grep -oE '"market_address": "0x[0-9a-fA-F]+"' /tmp/create-market.out | head -1 | grep -oE '0x[0-9a-fA-F]+')
-export YES_TOKEN=$(grep -oE '"yes_token": "0x[0-9a-fA-F]+"' /tmp/create-market.out | head -1 | grep -oE '0x[0-9a-fA-F]+')
-export NO_TOKEN=$(grep -oE '"no_token": "0x[0-9a-fA-F]+"' /tmp/create-market.out | head -1 | grep -oE '0x[0-9a-fA-F]+')
-export YES_SPOT=$(grep -oE '"yes_spot_market": "0x[0-9a-fA-F]+"' /tmp/create-market.out | head -1 | grep -oE '0x[0-9a-fA-F]+')
-export NO_SPOT=$(grep -oE '"no_spot_market": "0x[0-9a-fA-F]+"' /tmp/create-market.out | head -1 | grep -oE '0x[0-9a-fA-F]+')
-echo "MARKET=$MARKET YES_TOKEN=$YES_TOKEN YES_SPOT=$YES_SPOT"
+export SPOT=$(grep -oE '0x03[0-9a-fA-F]{14}' /tmp/create-spot.out | head -1)
+echo "SPOT=$SPOT"
 ```
 
-(Or copy the printed `Market Address` / `YES Token` / `YES Spot Market` lines into `export` yourself.)
-
----
-
-## 2. Mint YES + NO (complete set)
-
-Burns collateral and credits equal YES and NO to the default wallet:
-
-```shell
-lightpool mint-market \
-  --market-address "$MARKET" \
-  --amount "1000" \
-  --collateral-token "$COLLATERAL" \
-  --yes-token "$YES_TOKEN" \
-  --no-token "$NO_TOKEN"
-
-lightpool balance --token-address "$YES_TOKEN"
-lightpool balance --token-address "$COLLATERAL"
-```
+Or copy the printed `Spot Market` address into `export SPOT=...`.
 
 ---
 
 ## 3. Fund a second trader (taker)
 
-Maker keeps YES to sell; taker needs collateral (USDT) to buy YES:
+Maker (default wallet) keeps AAPL to sell. Taker needs USDT to buy:
 
 ```shell
 mkdir -p data/taker
@@ -69,54 +70,67 @@ export TAKER=$(lightpool address --wallet-path data/taker/wallet.json | grep -oE
 echo "$TAKER"
 
 lightpool transfer \
-  --token-address "$COLLATERAL" \
+  --token-address "$USDT" \
   --to "$TAKER" \
-  --amount "500"
+  --amount "100000"
 ```
 
 ---
 
-## 4. Place and fill (SDK demo)
+## 4. Place a resting sell (maker)
 
-`lightpool` does not expose `place-order` yet. Use the spot example in sibling `lightpool-sdk-rust` (creates its own BTC/USDT spot market, places a sell, then fills with a buy):
+Sell locks **base** (`AAPL`):
 
 ```shell
-cd ../lightpool-sdk-rust
-cargo run --release --example simple_spot_client
+lightpool place-order \
+  --spot-market "$SPOT" \
+  --side sell \
+  --amount "10" \
+  --price "190" \
+  --token-address "$AAPL" \
+  --tif gtc
+
+lightpool get-book --spot-market "$SPOT" --depth 10
 ```
-
-What that example does:
-
-1. Create BTC + USDT tokens for two traders  
-2. Create a **BTC/USDT spot** market  
-3. Place a resting **sell** (maker)  
-4. Place a **market buy** / **limit buy** (taker) that **fills** against the sell  
-5. Optional update / cancel on the residual order  
-6. Print balances  
-
-Node RPC must be `http://localhost:26300` (Docker one-node default).
 
 ---
 
-## 5. Query the order book
+## 5. Fill with a buy (taker)
 
-After you have a spot market address (`YES_SPOT` from step 1, or the market printed by the SDK example):
-
-```shell
-lightpool get-book --spot-market "$YES_SPOT" --depth 10
-```
-
-Empty book is normal until orders rest on that market.
-
----
-
-## Optional: burn complete set
+Buy locks **quote** (`USDT`). Use the taker wallet:
 
 ```shell
-lightpool burn-market \
-  --market-address "$MARKET" \
-  --amount "100" \
-  --collateral-token "$COLLATERAL" \
-  --yes-token "$YES_TOKEN" \
-  --no-token "$NO_TOKEN"
+lightpool place-order \
+  --wallet-path data/taker/wallet.json \
+  --spot-market "$SPOT" \
+  --side buy \
+  --amount "5" \
+  --price "190" \
+  --token-address "$USDT" \
+  --tif ioc
 ```
+
+Or a market buy:
+
+```shell
+lightpool place-order \
+  --wallet-path data/taker/wallet.json \
+  --spot-market "$SPOT" \
+  --side buy \
+  --amount "5" \
+  --price "190" \
+  --token-address "$USDT" \
+  --market
+```
+
+Check the book and balances:
+
+```shell
+lightpool get-book --spot-market "$SPOT" --depth 10
+lightpool balance --token-address "$AAPL"
+lightpool balance --token-address "$USDT"
+lightpool balance --token-address "$AAPL" --account "$TAKER"
+lightpool balance --token-address "$USDT" --account "$TAKER"
+```
+
+A fill happens when the buy crosses the resting sell (same or better price). Residual size stays on the book for GTC sells.

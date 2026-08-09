@@ -2,9 +2,10 @@
 
 Requires a running node (Docker venue in `docker/`, or `lightpool node` in another terminal).
 
-From the `lightpool-node` root:
+Run from the **`lightpool-node` package root** (parent of `docker/`), not from `docker/`:
 
 ```shell
+cd ~/work/lightpool-labs/lightpool-node   # or your clone path
 source ./env.sh
 ```
 

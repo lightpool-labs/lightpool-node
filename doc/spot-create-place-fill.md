@@ -4,9 +4,10 @@ Requires a running node (Docker one-node in `docker/`, or `lightpool node`).
 
 Needs a `lightpool` build that includes `create-spot-market` and `place-order` (rebuild from the `lightpool` repo, then refresh `lightpool-node/bin/` / Docker binaries).
 
-From the `lightpool-node` root:
+From the `lightpool-node` root (so `source ./env.sh` works):
 
 ```shell
+cd ~/work/lightpool-labs/lightpool-node   # or your clone path
 source ./env.sh
 ```
 
@@ -61,12 +62,15 @@ Or copy the printed `Spot Market` address into `export SPOT=...`.
 
 ## 3. Fund a second trader (taker)
 
-Maker (default wallet) keeps AAPL to sell. Taker needs USDT to buy:
+Maker (default `~/.lightpool/wallet.json`) keeps AAPL to sell. Taker needs USDT to buy.
+
+Use an absolute wallet path (do not use a relative `data/...` under `docker/`):
 
 ```shell
-mkdir -p data/taker
-lightpool create-wallet --force --wallet-path data/taker/wallet.json
-export TAKER=$(lightpool address --wallet-path data/taker/wallet.json | grep -oE '0x[0-9a-fA-F]{40}' | head -1)
+export TAKER_WALLET="$HOME/.lightpool/taker/wallet.json"
+mkdir -p "$(dirname "$TAKER_WALLET")"
+lightpool create-wallet --force --wallet-path "$TAKER_WALLET"
+export TAKER=$(lightpool address --wallet-path "$TAKER_WALLET" | grep -oE '0x[0-9a-fA-F]{40}' | head -1)
 echo "$TAKER"
 
 lightpool transfer \
@@ -101,7 +105,7 @@ Buy locks **quote** (`USDT`). Use the taker wallet:
 
 ```shell
 lightpool place-order \
-  --wallet-path data/taker/wallet.json \
+  --wallet-path "$TAKER_WALLET" \
   --spot-market "$SPOT" \
   --side buy \
   --amount "5" \
@@ -114,7 +118,7 @@ Or a market buy:
 
 ```shell
 lightpool place-order \
-  --wallet-path data/taker/wallet.json \
+  --wallet-path "$TAKER_WALLET" \
   --spot-market "$SPOT" \
   --side buy \
   --amount "5" \

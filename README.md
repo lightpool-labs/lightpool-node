@@ -63,7 +63,7 @@ Next: create a token and transfer — see [`doc/create-token-and-transfer.md`](d
 
 Next: spot market (create, place, fill) — see [`doc/spot-create-place-fill.md`](doc/spot-create-place-fill.md).
 
-App integration skill (Cursor Agent): [`.cursor/skills/spot-lightpool/`](.cursor/skills/spot-lightpool/).
+App integration (Cursor Plugin + skill): [`plugins/spot-lightpool/`](plugins/spot-lightpool/) (project skill via [`.cursor/skills/spot-lightpool`](.cursor/skills/spot-lightpool)).
 
 ## Run two nodes
 

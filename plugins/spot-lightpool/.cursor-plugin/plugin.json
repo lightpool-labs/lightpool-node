@@ -1,0 +1,20 @@
+{
+  "name": "spot-lightpool",
+  "version": "0.1.0",
+  "description": "Integrate apps with LightPool L1 on-chain spot orderbook (matching + settlement) via clob-index HTTP/WS and lightpool-sdk signed submit.",
+  "author": {
+    "name": "LightPool Labs"
+  },
+  "homepage": "https://github.com/lightpool-labs/lightpool-node",
+  "repository": "https://github.com/lightpool-labs/lightpool-node",
+  "keywords": [
+    "lightpool",
+    "l1",
+    "blockchain",
+    "spot",
+    "orderbook",
+    "clob-index",
+    "trading"
+  ],
+  "skills": "./skills"
+}

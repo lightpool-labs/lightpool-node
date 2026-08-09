@@ -11,11 +11,13 @@ description: >-
 
 This skill is for **AI agents** wiring an **application** to LightPool **spot**.
 
-**Spot context:** a local venue exposes clob-index at `http://127.0.0.1:3002`
-and `ws://127.0.0.1:3002/api/ws`. The app talks **only** to clob-index (not
-node RPC/WS). Spot markets (base/quote CLOB, e.g. AAPL/USDT) exist on that venue.
+**Spot context:** LightPool is a **blockchain L1** with an **on-chain orderbook**:
+spot CLOB **matching and settlement** both run on chain. Deploy the venue from
+[lightpool-node](https://github.com/lightpool-labs/lightpool-node). Default
+local clob-index: `http://127.0.0.1:3002` and `ws://127.0.0.1:3002/api/ws`.
+The app talks **only** to clob-index (not node RPC/WS).
 
-LightPool is **not an online SaaS**. Operators **deploy** their own node +
+LightPool is **not an online SaaS**. Operators **deploy** their own L1 node +
 clob-index; the app connects to that deployment’s clob-index URL.
 
 ## How the agent finds API details

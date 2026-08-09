@@ -4,9 +4,10 @@ Cursor plugin that teaches Agent how to integrate an app with **LightPool spot**
 
 **LightPool is a blockchain L1** targeting **200k TPS**, with an **on-chain
 orderbook**: spot CLOB **matching and settlement** both run on chain
-(base/quote, e.g. AAPL/USDT). Apps do not call the node RPC/WS directly; they
-use a deployed **clob-index** (HTTP/WS) for market data and
-`POST /api/tx/submit`, and sign txs with `lightpool-sdk`.
+(base/quote, e.g. AAPL/USDT). Users **deploy** their own node + clob-index; it
+is **not an online SaaS**. Apps do not call the node RPC/WS directly; they use
+a deployed **clob-index** (HTTP/WS) for market data and `POST /api/tx/submit`,
+and sign txs with `lightpool-sdk`.
 
 ## Contents
 

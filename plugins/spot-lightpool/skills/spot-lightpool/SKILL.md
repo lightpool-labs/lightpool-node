@@ -1,7 +1,9 @@
 ---
 name: spot-lightpool
 description: >-
-  Integrate an external app with a local LightPool spot orderbook via
+  LightPool is a blockchain L1 targeting 200k TPS with an on-chain spot
+  orderbook (matching and settlement on chain). Users deploy their own node +
+  clob-index; it is not an online SaaS. Integrate an external app via
   clob-index HTTP/WS and lightpool-sdk signed submit. Use when an AI agent
   wires an app for spot markets (e.g. AAPL/USDT): read books, subscribe to
   feeds, submit signed txs.

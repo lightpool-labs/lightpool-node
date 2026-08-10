@@ -12,14 +12,6 @@ This package does **not** need LightPool source code. Put prebuilt release artif
 - `lightpool-clob-indexer-v*.tar.gz` — extracted to `bin/lightpool-clob-indexer` on build
 - `burst_client` — prebuilt binary placed directly at `bin/burst_client`
 
-Build clob-index tarball from `lightpool-clob-indexer`:
-
-```shell
-cd ../lightpool-clob-indexer
-./build/build-release.sh
-cp target/lightpool-clob-indexer-v*.tar.gz ../lightpool-node/bin/
-```
-
 Extract packages and generate `env.sh` (adds `bin/` to `PATH`; gitignored):
 
 ```shell

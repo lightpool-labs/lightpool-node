@@ -20,7 +20,7 @@ lightpool-labs/
     bin/                 # lightpool (node + client subcommands)
     tools/reth/          # download.sh + run-dev.sh
   lightpool-bridge/      # EVM MockUSDT + Bridge (Foundry)
-  lightpool-clob-index/  # CLOB index HTTP/WS
+  lightpool-clob-indexer/  # CLOB index HTTP/WS
   lightpool-bot/         # liquidity-maker
   event-contract-app/    # frontend + backend
 ```
@@ -31,7 +31,7 @@ You download / clone at least:
 |---------|------|
 | `lightpool-node` | Prebuilt `lightpool` under `bin/` |
 | `lightpool-bridge` | Deploy MockUSDT + Bridge on Reth |
-| `lightpool-clob-index` | Index books / orders for app + maker |
+| `lightpool-clob-indexer` | Index books / orders for app + maker |
 | `lightpool-bot` | Polymarket → LightPool liquidity maker |
 | `event-contract-app` | Markets UI + Cash deposit/withdraw |
 
@@ -54,7 +54,7 @@ mkdir -p ~/work/lightpool-labs
 cd ~/work/lightpool-labs
 
 # Place / clone the packages listed above into this folder, e.g.:
-#   lightpool-node  lightpool-bridge  lightpool-clob-index
+#   lightpool-node  lightpool-bridge  lightpool-clob-indexer
 #   lightpool-bot   event-contract-app
 ```
 
@@ -201,7 +201,7 @@ $LP_CLI --rpc-url $LP_RPC balance \
 **E — clob-index**
 
 ```bash
-cd ~/work/lightpool-labs/lightpool-clob-index
+cd ~/work/lightpool-labs/lightpool-clob-indexer
 cp -n .env.example .env
 cargo run --release
 ```

@@ -6,7 +6,7 @@ NODE_ROOT="$(cd "$ROOT/.." && pwd)"
 BIN_DIR="$ROOT/bin"
 
 NODE_BIN="${LIGHTPOOL_BIN:-$NODE_ROOT/bin/lightpool}"
-CLOB_BIN="${LIGHTPOOL_CLOB_INDEX_BIN:-$NODE_ROOT/bin/lightpool-clob-index}"
+CLOB_BIN="${LIGHTPOOL_CLOB_INDEX_BIN:-$NODE_ROOT/bin/lightpool-clob-indexer}"
 
 mkdir -p "$BIN_DIR"
 
@@ -24,7 +24,7 @@ copy_one() {
 }
 
 copy_one "$NODE_BIN" lightpool
-copy_one "$CLOB_BIN" lightpool-clob-index
+copy_one "$CLOB_BIN" lightpool-clob-indexer
 
 echo "binaries ready under $BIN_DIR"
 echo "next: docker compose -f $ROOT/docker-compose.yml up --build -d"

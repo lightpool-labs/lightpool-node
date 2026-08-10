@@ -23,6 +23,7 @@ from config import RPC_URL, WALLET_PATH
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BRIDGE_DIR = REPO_ROOT / "lightpool-bridge"
+CONTRACTS_DIR = BRIDGE_DIR / "contracts"
 SETUP_DIR = Path(__file__).resolve().parent
 APP_BACKEND_ENV = REPO_ROOT / "event-contract-app" / "backend" / ".env"
 APP_BACKEND_ENV_EXAMPLE = REPO_ROOT / "event-contract-app" / "backend" / ".env.example"
@@ -97,10 +98,10 @@ def _cli_address() -> str:
 
 
 def _ensure_forge_std() -> None:
-    marker = BRIDGE_DIR / "lib" / "forge-std" / "src" / "Test.sol"
+    marker = CONTRACTS_DIR / "lib" / "forge-std" / "src" / "Test.sol"
     if marker.is_file():
         return
-    _run(["forge", "install", "foundry-rs/forge-std"], cwd=BRIDGE_DIR)
+    _run(["forge", "install", "foundry-rs/forge-std"], cwd=CONTRACTS_DIR)
 
 
 def _deploy_bridge(validator_eth: str) -> tuple[str, str]:
@@ -117,7 +118,7 @@ def _deploy_bridge(validator_eth: str) -> tuple[str, str]:
             DEPLOYER_PK,
             "-vvv",
         ],
-        cwd=BRIDGE_DIR,
+        cwd=CONTRACTS_DIR,
         env={
             "VALIDATOR_ETH": validator_eth,
             "USER_ETH": USER_ETH,
@@ -276,6 +277,7 @@ def _write_bridge_config(bridge: str) -> None:
     content = (
         "{\n"
         '  "enabled": true,\n'
+        f'  "wallet_path": "{NODE_WALLET}",\n'
         f'  "evm_rpc_url": "{RETH_RPC}",\n'
         f'  "evm_bridge_address": "{bridge}",\n'
         '  "evm_confirmations": 1,\n'
@@ -315,8 +317,10 @@ def _phase_deploy() -> None:
     _write_env(eth_usdt, bridge, lp_usdt=None)
     _write_bridge_config(bridge)
     print(
-        "Deploy phase done. Start LightPool ONCE with:\n"
-        f"  lightpool node --role validator --bridge-config {BRIDGE_CONFIG_JSON}\n"
+        "Deploy phase done. Start LightPool, then the bridge process:\n"
+        "  lightpool node --role validator\n"
+        f"  cargo run --release --manifest-path {REPO_ROOT / 'lightpool-bridge' / 'Cargo.toml'} "
+        f"-- --config {BRIDGE_CONFIG_JSON}\n"
         "Then run: python3 00_bridge_bootstrap.py --phase init",
         flush=True,
     )

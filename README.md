@@ -9,15 +9,15 @@ This project is intended for educational and research purposes only. It is not i
 This package does **not** need LightPool source code. Put prebuilt release artifacts in `bin/`:
 
 - `lightpool-v*.tar.gz` — extracted to `bin/lightpool` on build
-- `lightpool-clob-index-v*.tar.gz` — extracted to `bin/lightpool-clob-index` on build
+- `lightpool-clob-indexer-v*.tar.gz` — extracted to `bin/lightpool-clob-indexer` on build
 - `burst_client` — prebuilt binary placed directly at `bin/burst_client`
 
-Build clob-index tarball from `lightpool-clob-index`:
+Build clob-index tarball from `lightpool-clob-indexer`:
 
 ```shell
-cd ../lightpool-clob-index
+cd ../lightpool-clob-indexer
 ./build/build-release.sh
-cp target/lightpool-clob-index-v*.tar.gz ../lightpool-node/bin/
+cp target/lightpool-clob-indexer-v*.tar.gz ../lightpool-node/bin/
 ```
 
 Extract packages and generate `env.sh` (adds `bin/` to `PATH`; gitignored):
@@ -30,14 +30,14 @@ source ./env.sh
 After that, these commands are available on `PATH`:
 
 - `lightpool` (node + client subcommands)
-- `lightpool-clob-index`
+- `lightpool-clob-indexer`
 - `burst_client`
 
 Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` / `BURST_CLIENT_BIN` if needed.
 
 ## Run one node on Docker
 
-Runs **one LightPool node + clob-index** via Compose under `docker/`. Finish [Setup](#setup-binaries-on-path) first (`bin/lightpool` and `bin/lightpool-clob-index` present).
+Runs **one LightPool node + clob-index** via Compose under `docker/`. Finish [Setup](#setup-binaries-on-path) first (`bin/lightpool` and `bin/lightpool-clob-indexer` present).
 
 ```shell
 # same key as docker/.env LIGHTPOOL_PRIVATE_KEY

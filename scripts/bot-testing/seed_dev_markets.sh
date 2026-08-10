@@ -15,7 +15,7 @@
 #
 # Prerequisites (already running):
 #   - lightpool node  (RPC http://127.0.0.1:26300)
-#   - lightpool-clob-index  (http://127.0.0.1:3002)
+#   - lightpool-clob-indexer  (http://127.0.0.1:3002)
 #
 # Usage (from lightpool-node):
 #   source ./env.sh
@@ -79,7 +79,7 @@ lightpool address || true
 echo "Checking clob-index at $CLOB_HTTP ..."
 if ! curl -sf "$CLOB_HTTP/api/health/health" >/dev/null && ! curl -sf "$CLOB_HTTP/api/markets?limit=1" >/dev/null; then
   echo "clob-index not healthy. Start it with:" >&2
-  echo "  cd ../lightpool-clob-index && cargo run --release --bin lightpool-clob-index" >&2
+  echo "  cd ../lightpool-clob-indexer && cargo run --release --bin lightpool-clob-indexer" >&2
   exit 1
 fi
 

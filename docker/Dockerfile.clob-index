@@ -20,10 +20,10 @@ RUN apt-get update \
 
 ENV HTTP_PROXY= HTTPS_PROXY= NO_PROXY= http_proxy= https_proxy= no_proxy=
 
-COPY bin/lightpool-clob-index /usr/local/bin/lightpool-clob-index
+COPY bin/lightpool-clob-indexer /usr/local/bin/lightpool-clob-indexer
 
-RUN chmod +x /usr/local/bin/lightpool-clob-index
+RUN chmod +x /usr/local/bin/lightpool-clob-indexer
 
 WORKDIR /data
 EXPOSE 3002
-ENTRYPOINT ["lightpool-clob-index"]
+ENTRYPOINT ["lightpool-clob-indexer"]

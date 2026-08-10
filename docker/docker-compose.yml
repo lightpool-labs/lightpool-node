@@ -45,7 +45,7 @@ services:
       context: .
       dockerfile: Dockerfile.clob-index
       <<: *build-proxy
-    container_name: lightpool-clob-index
+    container_name: lightpool-clob-indexer
     restart: unless-stopped
     depends_on:
       - node

@@ -16,7 +16,7 @@ fn main() {
     let bin_dir = manifest_path.join("bin");
     let node_binary_path = bin_dir.join("lightpool");
     let cli_binary_path = bin_dir.join("lightpool-cli");
-    let clob_binary_path = bin_dir.join("lightpool-clob-index");
+    let clob_binary_path = bin_dir.join("lightpool-clob-indexer");
     let burst_binary_path = bin_dir.join("burst_client");
 
     register_rerun_paths(&bin_dir);
@@ -35,8 +35,8 @@ fn main() {
     if !clob_binary_path.exists() {
         if let Err(err) = extract_binary_from_archive(
             &bin_dir,
-            "lightpool-clob-index-v",
-            "lightpool-clob-index",
+            "lightpool-clob-indexer-v",
+            "lightpool-clob-indexer",
             &clob_binary_path,
         ) {
             println!("cargo:warning={err}");
@@ -78,7 +78,7 @@ fn main() {
     }
     if !clob_binary_path.exists() {
         println!(
-            "cargo:warning=bin/lightpool-clob-index not found; place lightpool-clob-index-v*.tar.gz in bin/ and run cargo build"
+            "cargo:warning=bin/lightpool-clob-indexer not found; place lightpool-clob-indexer-v*.tar.gz in bin/ and run cargo build"
         );
     }
 }
@@ -135,7 +135,7 @@ fn is_release_archive(path: &Path) -> bool {
         .map(|name| {
             name.ends_with(".tar.gz")
                 && (name.starts_with("lightpool-v")
-                    || name.starts_with("lightpool-clob-index-v"))
+                    || name.starts_with("lightpool-clob-indexer-v"))
         })
         .unwrap_or(false)
 }

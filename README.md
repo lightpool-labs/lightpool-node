@@ -27,53 +27,37 @@ After that, these commands are available on `PATH`:
 
 Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` / `BURST_CLIENT_BIN` if needed.
 
-## Run one node
+## 1. Burst
 
-### Docker
-
-See [`doc/run-one-node-in-docker.md`](doc/run-one-node-in-docker.md) for one LightPool node + clob-index via Compose (`docker/`).
-
-### Transfer and CLOB burst (SDK)
-
-With the node reachable at RPC `26300` and mempool `26000` (Docker defaults on `127.0.0.1`), build and run the examples from **`lightpool-sdk-rust`**:
+Terminal 1 — node:
 
 ```shell
-export LABS=~/work/lightpool-labs   # or your clone root
-cd "$LABS/lightpool-sdk-rust"
+cd ~/work/lightpool-labs/lightpool-node
+source ./env.sh
+lightpool create-wallet --force
+lightpool node --role validator
 ```
 
-**Token transfer burst** — [`examples/burst_client.rs`](../lightpool-sdk-rust/examples/burst_client.rs): creates a token, funds many senders, then pushes parallel transfers through the mempool.
+Terminal 2 — transfer burst:
 
 ```shell
+cd ~/work/lightpool-labs/lightpool-sdk-rust
 cargo run --release --example burst_client -- \
-  --address 127.0.0.1 \
-  --senders 64 --recipients 64 --tasks 4 --rate-per-task 100 --duration 5
+  --tasks 1 --rate-per-task 400000 --duration 10
 ```
 
-Omit the extra flags to use the example defaults (high-throughput benchmark: 2048 senders, 8 tasks, 1000 tx/s per task, 10s).
-
-**Multi-market spot CLOB burst** — [`examples/burst_spot_multi_market_client.rs`](../lightpool-sdk-rust/examples/burst_spot_multi_market_client.rs): creates tokens and spot markets, funds senders, then bursts `place_order` traffic (mostly resting limits; ~1% market sells for fills).
+Terminal 2 — spot CLOB burst:
 
 ```shell
+cd ~/work/lightpool-labs/lightpool-sdk-rust
 cargo run --release --example burst_spot_multi_market_client -- \
-  --address 127.0.0.1 \
-  --num-markets 4 --senders 32 --tasks 4 --rate-per-task 50 --duration 5
+  --tasks 1 --rate-per-task 20000 --duration 10
 ```
 
-Omit the extra flags for the full benchmark profile (500 markets, 1024 senders, 8 tasks, 500 orders/s per task, 10s).
+## 2. Run one node on Docker
 
-Both examples use ephemeral SDK signers (no `lightpool import-wallet` required). Point `--address` at the node host if it is not local.
+See [`doc/run-one-node-in-docker.md`](doc/run-one-node-in-docker.md).
 
-Optional: copy release binaries into this package for scripts that expect `bin/burst_client`:
-
-```shell
-cargo build --release --example burst_client --example burst_spot_multi_market_client
-cp target/release/examples/burst_client "$LABS/lightpool-node/bin/"
-cp target/release/examples/burst_spot_multi_market_client "$LABS/lightpool-node/bin/"
-```
-
-Step-by-step CLI token transfer and spot place/fill (no burst): [`doc/create-token-and-transfer.md`](doc/create-token-and-transfer.md), [`doc/spot-create-place-fill.md`](doc/spot-create-place-fill.md).
-
-## Run two nodes
+## 3. Run two nodes
 
 See [`doc/two-nodes.md`](doc/two-nodes.md).

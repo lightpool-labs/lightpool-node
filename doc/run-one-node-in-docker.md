@@ -22,6 +22,4 @@ Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
 
 `--no-cache` may download slowly (Ubuntu packages). Builds use host proxy `http://127.0.0.1:8118` by default (`HTTP_PROXY` in `docker/.env`); start the proxy first if you need it. For a faster rebuild when images already exist, omit `--no-cache`.
 
-When the stack is up, load-test transfers and spot CLOB with the SDK burst examples — see [Run one node](../README.md#run-one-node) in the README.
-
-Manual CLI flows (single token transfer or step-by-step spot) remain in [`create-token-and-transfer.md`](create-token-and-transfer.md) and [`spot-create-place-fill.md`](spot-create-place-fill.md).
+When the stack is up, run the [burst examples](../README.md#1-burst).

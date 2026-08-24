@@ -31,6 +31,9 @@ docker/data/
 
 scripts/run_2nodes/.local-network/
 
+# E2E test runtime (scenario1/2 scripts wipe and recreate each run)
+tests/.scenario*/
+
 # Python bytecode
 **/__pycache__/
 *.py[cod]

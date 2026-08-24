@@ -1,11 +1,11 @@
-# Create token and transfer
+# Payment — create token and transfer
+
+Payment path on LightPool: issue a token and transfer balances between accounts (target **400k TPS** on payments).
 
 Requires a running node (Docker venue in `docker/`, or `lightpool node` in another terminal).
 
-Run from the **`lightpool-node` package root** (parent of `docker/`), not from `docker/`:
-
 ```shell
-cd ~/work/lightpool-labs/lightpool-node   # or your clone path
+cd ~/work/lightpool-labs/lightpool-node
 source ./env.sh
 ```
 
@@ -27,7 +27,7 @@ Copy the token address from the output (on a fresh chain the first token is usua
 lightpool balance --token-address "0x0200000000000001"
 ```
 
-## 3. Create a recipient wallet and transfer
+## 3. Transfer to a recipient
 
 ```shell
 mkdir -p data/recipient
@@ -56,4 +56,4 @@ lightpool mint \
   --amount "1000"
 ```
 
-Next: spot market (create, place, fill) — see [`spot-create-place-fill.md`](spot-create-place-fill.md).
+Next: trading (spot market) — see [`spot-create-place-fill.md`](spot-create-place-fill.md).

@@ -24,5 +24,5 @@ Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
 
 When the stack is up:
 
-- [`create-token-and-transfer.md`](create-token-and-transfer.md)
+- [Payment — create token and transfer](create-token-and-transfer.md)
 - [`spot-create-place-fill.md`](spot-create-place-fill.md)

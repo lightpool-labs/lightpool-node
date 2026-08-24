@@ -1,8 +1,6 @@
 # lightpool-node
 
-Trading and payments on a Layer 1 blockchain — target **200k TPS** on the orderbook and **400k TPS** on payments.
-
-Still in development; not for production deployment.
+Trading and payments on a Layer 1 blockchain — target **200k TPS** on the orderbook and **400k TPS** on payments. Still in development; not for production deployment.
 
 ## Setup
 

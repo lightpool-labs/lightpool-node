@@ -9,12 +9,18 @@ This project is intended for educational and research purposes only. It is not i
 This package does **not** need LightPool source code. Put prebuilt release artifacts in `bin/`:
 
 - `lightpool-v*.tar.gz` — extracted to `bin/lightpool` on build
-- `lightpool-clob-indexer-v*.tar.gz` — extracted to `bin/lightpool-clob-indexer` on build
-- `burst_client` — prebuilt binary placed directly at `bin/burst_client`
-
-Extract packages and generate `env.sh` (adds `bin/` to `PATH`; gitignored):
+- `lightpool-clob-indexer` — build from [`lightpool-clob-indexer`](../lightpool-clob-indexer) and copy into `bin/`
 
 ```shell
+cd ~/work/lightpool-labs/lightpool-clob-indexer
+cargo build --release --bin lightpool-clob-indexer
+cp target/release/lightpool-clob-indexer ../lightpool-node/bin/
+```
+
+Extract the node package and generate `env.sh` (adds `bin/` to `PATH`; gitignored):
+
+```shell
+cd ~/work/lightpool-labs/lightpool-node
 cargo build --release
 source ./env.sh
 ```
@@ -23,9 +29,8 @@ After that, these commands are available on `PATH`:
 
 - `lightpool` (node + client subcommands)
 - `lightpool-clob-indexer`
-- `burst_client`
 
-Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` / `BURST_CLIENT_BIN` if needed.
+Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` if needed.
 
 ## 1. Burst
 

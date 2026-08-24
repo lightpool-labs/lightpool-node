@@ -1,23 +1,10 @@
 # lightpool-node
 
-High-Frequency Trading Infrastructure Powered by a Layer 1 Blockchain with 200ktps orderbook
+Trading and payments on a Layer 1 blockchain — target **200k TPS** on the orderbook and **400k TPS** on payments.
 
-This project is intended for educational and research purposes only. It is not intended for production deployment, live trading, or commercial use.
+Still in development; not for production deployment.
 
-## Setup (binaries on PATH)
-
-This package does **not** need LightPool source code. Put prebuilt release artifacts in `bin/`:
-
-- `lightpool-v*.tar.gz` — extracted to `bin/lightpool` on build
-- `lightpool-clob-indexer` — build from [`lightpool-clob-indexer`](../lightpool-clob-indexer) and copy into `bin/`
-
-```shell
-cd ~/work/lightpool-labs/lightpool-clob-indexer
-cargo build --release --bin lightpool-clob-indexer
-cp target/release/lightpool-clob-indexer ../lightpool-node/bin/
-```
-
-Extract the node package and generate `env.sh` (adds `bin/` to `PATH`; gitignored):
+## Setup
 
 ```shell
 cd ~/work/lightpool-labs/lightpool-node
@@ -25,38 +12,22 @@ cargo build --release
 source ./env.sh
 ```
 
-After that, these commands are available on `PATH`:
-
-- `lightpool` (node + client subcommands)
-- `lightpool-clob-indexer`
-
-Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` if needed.
-
 ## 1. Burst
 
 Terminal 1 — node:
 
 ```shell
 cd ~/work/lightpool-labs/lightpool-node
-source ./env.sh
 lightpool create-wallet --force
 lightpool node --role validator
 ```
 
-Terminal 2 — transfer burst:
+Terminal 2:
 
 ```shell
 cd ~/work/lightpool-labs/lightpool-sdk-rust
-cargo run --release --example burst_client -- \
-  --tasks 1 --rate-per-task 400000 --duration 10
-```
-
-Terminal 2 — spot CLOB burst:
-
-```shell
-cd ~/work/lightpool-labs/lightpool-sdk-rust
-cargo run --release --example burst_spot_multi_market_client -- \
-  --tasks 1 --rate-per-task 20000 --duration 10
+cargo run --release --example burst_client -- --tasks 1 --rate-per-task 400000 --duration 10
+cargo run --release --example burst_spot_client -- --tasks 1 --rate-per-task 20000 --duration 10
 ```
 
 ## 2. Run one node on Docker

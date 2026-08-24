@@ -2,7 +2,11 @@
 
 Run two validators locally. node0 starts alone and produces the first checkpoint at block 1000; node1 joins afterward via state sync and staking. After the second epoch (~block 2000), both nodes should propose.
 
-From the `lightpool-node` root with binaries on `PATH` (`source ./env.sh`).
+```shell
+cd ~/work/lightpool-labs/lightpool-node
+cargo build --release
+source ./env.sh
+```
 
 ## Listening addresses
 

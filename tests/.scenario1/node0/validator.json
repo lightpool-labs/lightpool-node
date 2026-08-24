@@ -1,0 +1,5 @@
+{
+  "consensus_pubkey": "A+JhFDX3I57tZ2JbMnORZNW60Af5CZxjJE2isLPyJqRy",
+  "mempool_address": "127.0.0.1:36100",
+  "consensus_address": "127.0.0.1:36200"
+}

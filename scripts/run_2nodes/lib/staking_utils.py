@@ -125,6 +125,18 @@ def bond_lpl(rpc_spec: NodeSpec, wallet_spec: NodeSpec, lpl_token: str, amount: 
     )
 
 
+def register_validator(rpc_spec: NodeSpec, wallet_spec: NodeSpec) -> None:
+    run_cli(rpc_spec, wallet_spec, ["register-validator"])
+
+
+def allocate_stake(rpc_spec: NodeSpec, wallet_spec: NodeSpec, amount: str) -> None:
+    run_cli(
+        rpc_spec,
+        wallet_spec,
+        ["allocate-stake", "--amount", amount, "--purpose", "committee"],
+    )
+
+
 def transfer_lpl(
     rpc_spec: NodeSpec,
     wallet_spec: NodeSpec,
@@ -171,6 +183,10 @@ def run_staking_setup(
         init_staking_config(leader, lpl_token)
         save_staking_state(data_dir, init_config_done=True)
     bond_lpl(leader, leader, lpl_token, STAKING_BOND_AMOUNTS[0])
+    # Committee selection counts only Committee-allocated stake from
+    # registered validators, so bonding alone is not enough.
+    register_validator(leader, leader)
+    allocate_stake(leader, leader, STAKING_BOND_AMOUNTS[0])
 
     follower_owner, _ = wallet_identity(follower.wallet_path)
     print(
@@ -186,4 +202,6 @@ def run_staking_setup(
         flush=True,
     )
     bond_lpl(leader, follower, lpl_token, STAKING_BOND_AMOUNTS[1])
+    register_validator(leader, follower)
+    allocate_stake(leader, follower, STAKING_BOND_AMOUNTS[1])
     save_staking_state(data_dir, follower_bond_done=True)

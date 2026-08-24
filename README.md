@@ -27,33 +27,52 @@ After that, these commands are available on `PATH`:
 
 Or call `./bin/lightpool` without sourcing. Override paths with `LIGHTPOOL_BIN` / `BURST_CLIENT_BIN` if needed.
 
-## Run one node on Docker
+## Run one node
 
-Runs **one LightPool node + clob-index** via Compose under `docker/`. Finish [Setup](#setup-binaries-on-path) first (`bin/lightpool` and `bin/lightpool-clob-indexer` present).
+### Docker
+
+See [`doc/run-one-node-in-docker.md`](doc/run-one-node-in-docker.md) for one LightPool node + clob-index via Compose (`docker/`).
+
+### Transfer and CLOB burst (SDK)
+
+With the node reachable at RPC `26300` and mempool `26000` (Docker defaults on `127.0.0.1`), build and run the examples from **`lightpool-sdk-rust`**:
 
 ```shell
-# same key as docker/.env LIGHTPOOL_PRIVATE_KEY
-export DEV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-lightpool import-wallet --private-key "$DEV_KEY" --force
-
-cd docker
-[ -f .env ] || cp .env.example .env
-# set LIGHTPOOL_PRIVATE_KEY (same as DEV_KEY)
-./prepare-binaries.sh
-docker compose down
-# sudo rm -rf ./data/node ./data/clob-index
-# --no-cache rebuilds base layers; apt download can be slow the first time
-docker compose build --no-cache
-docker compose up -d
+export LABS=~/work/lightpool-labs   # or your clone root
+cd "$LABS/lightpool-sdk-rust"
 ```
 
-Ports: RPC `26300`, WS `26400`, mempool `26000`, clob-index `3002`.
+**Token transfer burst** — [`examples/burst_client.rs`](../lightpool-sdk-rust/examples/burst_client.rs): creates a token, funds many senders, then pushes parallel transfers through the mempool.
 
-`--no-cache` may download slowly (Ubuntu packages). Builds use host proxy `http://127.0.0.1:8118` by default (`HTTP_PROXY` in `docker/.env`); start the proxy first if you need it. For a faster rebuild when images already exist, omit `--no-cache`.
+```shell
+cargo run --release --example burst_client -- \
+  --address 127.0.0.1 \
+  --senders 64 --recipients 64 --tasks 4 --rate-per-task 100 --duration 5
+```
 
-Next: create a token and transfer — see [`doc/create-token-and-transfer.md`](doc/create-token-and-transfer.md).
+Omit the extra flags to use the example defaults (high-throughput benchmark: 2048 senders, 8 tasks, 1000 tx/s per task, 10s).
 
-Next: spot market (create, place, fill) — see [`doc/spot-create-place-fill.md`](doc/spot-create-place-fill.md).
+**Multi-market spot CLOB burst** — [`examples/burst_spot_multi_market_client.rs`](../lightpool-sdk-rust/examples/burst_spot_multi_market_client.rs): creates tokens and spot markets, funds senders, then bursts `place_order` traffic (mostly resting limits; ~1% market sells for fills).
+
+```shell
+cargo run --release --example burst_spot_multi_market_client -- \
+  --address 127.0.0.1 \
+  --num-markets 4 --senders 32 --tasks 4 --rate-per-task 50 --duration 5
+```
+
+Omit the extra flags for the full benchmark profile (500 markets, 1024 senders, 8 tasks, 500 orders/s per task, 10s).
+
+Both examples use ephemeral SDK signers (no `lightpool import-wallet` required). Point `--address` at the node host if it is not local.
+
+Optional: copy release binaries into this package for scripts that expect `bin/burst_client`:
+
+```shell
+cargo build --release --example burst_client --example burst_spot_multi_market_client
+cp target/release/examples/burst_client "$LABS/lightpool-node/bin/"
+cp target/release/examples/burst_spot_multi_market_client "$LABS/lightpool-node/bin/"
+```
+
+Step-by-step CLI token transfer and spot place/fill (no burst): [`doc/create-token-and-transfer.md`](doc/create-token-and-transfer.md), [`doc/spot-create-place-fill.md`](doc/spot-create-place-fill.md).
 
 ## Run two nodes
 

@@ -1,0 +1,77 @@
+{
+  "epoch": 1,
+  "files": [
+    {
+      "path": "000018.log",
+      "size": 1494,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    },
+    {
+      "path": "000019.sst",
+      "size": 11158,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    },
+    {
+      "path": "000020.sst",
+      "size": 295509,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    },
+    {
+      "path": "000021.log",
+      "size": 940,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    },
+    {
+      "path": "000022.sst",
+      "size": 387952,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    },
+    {
+      "path": "000023.sst",
+      "size": 1235,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    },
+    {
+      "path": "CURRENT",
+      "size": 16,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    },
+    {
+      "path": "MANIFEST-000005",
+      "size": 1026,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    },
+    {
+      "path": "OPTIONS-000017",
+      "size": 28005,
+      "chunk_count": 1,
+      "completed_chunks": [
+        0
+      ]
+    }
+  ]
+}

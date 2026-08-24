@@ -1,0 +1,54 @@
+[2026-08-23T05:33:14Z INFO  lightpool::node] Starting LightPool node (wallet=/home/yucili/work/lightpool-labs/lightpool-node/tests/.scenario1/node0/wallet.json, store=/home/yucili/work/lightpool-labs/lightpool-node/tests/.scenario1/node0/store, validator=/home/yucili/work/lightpool-labs/lightpool-node/tests/.scenario1/node0/validator.json, role=Validator, boot_peer=None)
+[2026-08-23T05:33:14Z INFO  lightpool_node::booter] No boot peer; skipping startup sync check
+[2026-08-23T05:33:14Z INFO  lightpool_node::state] No block tree snapshot found; creating genesis block tree
+[2026-08-23T05:33:14Z INFO  lightpool_node::state] Creating genesis block tree
+[2026-08-23T05:33:14Z INFO  lightpool_core::light_state] No clearinghouse snapshot found; starting with empty positions at head
+[2026-08-23T05:33:14Z INFO  lightpool_node::state] Clearinghouse restored at head 0x0000000000000000000000000000000000000000000000000000000000000000 with 0 positions
+[2026-08-23T05:33:14Z INFO  lightpool_node::committee] No on-chain committee and no boot peer; starting as single validator (100% stake)
+[2026-08-23T05:33:14Z INFO  lightpool_node::validator] Node A+JhFDX3I57tZ2Jb successfully booted with completion-based shutdown tracking
+[2026-08-23T05:33:14Z INFO  lightpool_node::validator] Validator node prepared to run
+[2026-08-23T05:33:14Z INFO  lightpool_node::node] Node is running; press Ctrl+C to stop
+[2026-08-23T05:33:14Z INFO  lightpool_consensus::consensus] Node listening to consensus messages on 0.0.0.0:36200
+[2026-08-23T05:33:14Z INFO  lightpool_consensus::core] Consensus starting at round 1 (last_committed=0, last_voted=0, high_qc=0, high_tc=None, resume_tip=None)
+[2026-08-23T05:33:14Z INFO  lightpool_rpc] JSON-RPC HTTP server listening on 0.0.0.0:36300
+[2026-08-23T05:33:14Z INFO  lightpool_mempool::mempool] Mempool successfully booted on 127.0.0.1:36100
+[2026-08-23T05:33:14Z INFO  lightpool_rpc::websocket_api] WebSocket server listening on 0.0.0.0:36400
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50664 conn_id=0
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50670 conn_id=1
+[2026-08-23T05:33:15Z INFO  lightpool_core::execution::block_executor] Block 1(0) executed successfully, 1 txs(145.198µs), tps: 6887.15 txs/s
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50676 conn_id=2
+[2026-08-23T05:33:15Z INFO  lightpool_core::execution::block_executor] Block 2(0) executed successfully, 1 txs(170.907µs), tps: 5851.14 txs/s
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50686 conn_id=3
+[2026-08-23T05:33:15Z INFO  lightpool_core::execution::block_executor] Block 3(2) executed successfully, 1 txs(206.574µs), tps: 4840.88 txs/s
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50696 conn_id=4
+[2026-08-23T05:33:15Z INFO  lightpool_core::execution::block_executor] Block 4(3) executed successfully, 1 txs(119.148µs), tps: 8392.92 txs/s
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50710 conn_id=5
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50720 conn_id=6
+[2026-08-23T05:33:15Z INFO  lightpool_core::execution::block_executor] Block 5(4) executed successfully, 1 txs(213.057µs), tps: 4693.58 txs/s
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50726 conn_id=7
+[2026-08-23T05:33:15Z INFO  lightpool_x::modules::spot::call] get_book: market_contract=0x0300000000000001, sender=0x0000000000000000000000000000000000000000, params=GetBookParams { depth: 10, aggregated: true }
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50730 conn_id=8
+[2026-08-23T05:33:15Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50738 conn_id=9
+[2026-08-23T05:33:15Z INFO  lightpool_core::execution::block_executor] Block 6(5) executed successfully, 1 txs(229.949µs), tps: 4348.79 txs/s
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50740 conn_id=10
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50744 conn_id=11
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50748 conn_id=12
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50756 conn_id=13
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50772 conn_id=14
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50774 conn_id=15
+[2026-08-23T05:33:16Z INFO  lightpool_x::modules::spot::call] get_book: market_contract=0x0300000000000001, sender=0x0000000000000000000000000000000000000000, params=GetBookParams { depth: 10, aggregated: true }
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50790 conn_id=16
+[2026-08-23T05:33:16Z INFO  lightpool_x::modules::spot::cancel_order] cancel_order_impl: market_contract=0x0300000000000001, sender=0xc04ee434269ccc5c3c12badfc92677d2d5db5f71, cancel_params=CancelOrderParams { order_id: 1 }
+[2026-08-23T05:33:16Z INFO  lightpool_core::execution::block_executor] Block 7(6) executed successfully, 1 txs(244.568µs), tps: 4088.84 txs/s
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50798 conn_id=17
+[2026-08-23T05:33:16Z INFO  lightpool_x::modules::spot::call] get_book: market_contract=0x0300000000000001, sender=0x0000000000000000000000000000000000000000, params=GetBookParams { depth: 10, aggregated: true }
+[2026-08-23T05:33:16Z INFO  jsonrpsee_server::server] connection; remote_addr=127.0.0.1:50800 conn_id=18
+[2026-08-23T05:33:16Z INFO  lightpool_node::node] Received shutdown signal (SIGTERM)
+[2026-08-23T05:33:16Z INFO  lightpool_node::node] Initiating node shutdown sequence
+[2026-08-23T05:33:16Z INFO  lightpool_mempool::mempool] Mempool shutdown complete
+[2026-08-23T05:33:16Z INFO  lightpool_sync::fast_sync_manager] Fast sync manager stopped
+[2026-08-23T05:33:16Z INFO  lightpool_consensus::consensus] Consensus shutdown complete
+[2026-08-23T05:33:16Z INFO  lightpool_core::execution_manager] Execution manager shutdown complete
+[2026-08-23T05:33:16Z INFO  lightpool_core::batch_writer] Batch writer manager shutdown complete
+[2026-08-23T05:33:16Z INFO  lightpool_core::controller] Controller shutdown complete
+[2026-08-23T05:33:16Z INFO  lightpool_node::node] Node shutdown complete

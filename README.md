@@ -26,8 +26,8 @@ Terminal 2:
 
 ```shell
 cd ~/work/lightpool-labs/lightpool-sdk-rust
-cargo run --release --example burst_client -- --tasks 1 --rate-per-task 400000 --duration 10
-cargo run --release --example burst_spot_client -- --tasks 1 --rate-per-task 20000 --duration 10
+cargo run --release --example burst_transfer -- --tasks 1 --rate-per-task 400000 --duration 10
+cargo run --release --example burst_spot -- --tasks 1 --rate-per-task 200000 --duration 10
 ```
 
 ## 2. Run one node on Docker

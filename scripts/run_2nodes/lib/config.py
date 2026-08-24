@@ -49,5 +49,5 @@ BUILD_LIGHTPOOL_HINT = (
 )
 BUILD_BURST_HINT = (
     f"Place burst_client at {PROJECT_ROOT / 'bin' / 'burst_client'} "
-    "(build from lightpool-sdk-rust: cargo build --release --example burst_client)"
+    "(build from lightpool-sdk-rust: cargo build --release --example burst_transfer)"
 )

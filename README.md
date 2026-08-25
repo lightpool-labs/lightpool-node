@@ -1,6 +1,6 @@
 # lightpool-node
 
-Trading and payments on a Layer 1 blockchain — target **200k TPS** on the orderbook and **400k TPS** on payments. Still in development; not for production deployment.
+Trading and payments on a Layer 1 blockchain — target **200k TPS** on the orderbook and **400k TPS** on payments. Inspired by Bitcoin, EOS, Solana, Sui, Aptos, and Hyperliquid. Approaching production; not production-ready yet.
 
 ## Setup
 
@@ -36,6 +36,6 @@ See [`doc/run-one-node-in-docker.md`](doc/run-one-node-in-docker.md).
 
 See [`doc/two-nodes.md`](doc/two-nodes.md).
 
-## 4. Venue stack + Reth bridge (Scenario 4)
+## 4. Venue stack + bridge
 
-See [`doc/venue-stack-reth-bridge.md`](doc/venue-stack-reth-bridge.md).
+See [`doc/venue-stack-bridge.md`](doc/venue-stack-bridge.md).

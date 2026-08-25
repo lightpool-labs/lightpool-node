@@ -1,4 +1,4 @@
-# Venue stack + Reth bridge (Scenario 4)
+# Venue stack + bridge
 
 **Terminals: 4** (1 reused for sequential setup; 2/3/4 keep open)
 

@@ -35,3 +35,7 @@ See [`doc/run-one-node-in-docker.md`](doc/run-one-node-in-docker.md).
 ## 3. Run two nodes
 
 See [`doc/two-nodes.md`](doc/two-nodes.md).
+
+## 4. Venue stack + Reth bridge (Scenario 4)
+
+See [`doc/venue-stack-reth-bridge.md`](doc/venue-stack-reth-bridge.md).

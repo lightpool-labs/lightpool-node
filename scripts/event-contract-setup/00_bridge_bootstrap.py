@@ -27,6 +27,8 @@ CONTRACTS_DIR = BRIDGE_DIR / "contracts"
 SETUP_DIR = Path(__file__).resolve().parent
 APP_BACKEND_ENV = REPO_ROOT / "event-contract-app" / "backend" / ".env"
 APP_BACKEND_ENV_EXAMPLE = REPO_ROOT / "event-contract-app" / "backend" / ".env.example"
+APP_DOCKER_ENV = REPO_ROOT / "event-contract-app" / "docker" / ".env"
+APP_DOCKER_ENV_EXAMPLE = REPO_ROOT / "event-contract-app" / "docker" / ".env.example"
 BRIDGE_CONFIG_JSON = REPO_ROOT / "tools" / "bridge-local" / "bridge-config.json"
 
 RETH_RPC = os.environ.get("RETH_RPC", "http://127.0.0.1:8545")
@@ -215,6 +217,28 @@ def _load_bridge_env() -> dict[str, str]:
     return values
 
 
+def _upsert_dotenv(path: Path, example: Path, updates: dict[str, str]) -> None:
+    target = path if path.exists() else example
+    if not target.exists():
+        print(f"skip env write; missing {target}", flush=True)
+        return
+    lines = target.read_text(encoding="utf-8").splitlines()
+    seen: set[str] = set()
+    new_lines: list[str] = []
+    for line in lines:
+        key = line.split("=", 1)[0] if "=" in line and not line.strip().startswith("#") else None
+        if key in updates:
+            new_lines.append(f"{key}={updates[key]}")
+            seen.add(key)
+        else:
+            new_lines.append(line)
+    for key, value in updates.items():
+        if key not in seen:
+            new_lines.append(f"{key}={value}")
+    path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+    print(f"wrote {path}", flush=True)
+
+
 def _write_env(eth_usdt: str, bridge: str, lp_usdt: str | None = None) -> None:
     lp_value = lp_usdt or ""
     content = (
@@ -239,37 +263,26 @@ def _write_env(eth_usdt: str, bridge: str, lp_usdt: str | None = None) -> None:
         os.environ["CASH_TOKEN_ADDRESS"] = lp_usdt
         os.environ["LP_USDT"] = lp_usdt
 
-    target = APP_BACKEND_ENV if APP_BACKEND_ENV.exists() else APP_BACKEND_ENV_EXAMPLE
-    if not target.exists():
-        print(f"skip app env write; missing {target}", flush=True)
-        return
-
-    lines = target.read_text(encoding="utf-8").splitlines()
     updates = {
         "ETH_USDT": eth_usdt,
         "BRIDGE": bridge,
         "EVM_CHAIN_ID": EVM_CHAIN_ID,
-        "EVM_RPC_URL": RETH_RPC,
         "CASH_TOKEN_SYMBOL": "USDT",
     }
     if lp_usdt:
         updates["CASH_TOKEN_ADDRESS"] = lp_usdt
 
-    seen = set()
-    new_lines: list[str] = []
-    for line in lines:
-        key = line.split("=", 1)[0] if "=" in line and not line.strip().startswith("#") else None
-        if key in updates:
-            new_lines.append(f"{key}={updates[key]}")
-            seen.add(key)
-        else:
-            new_lines.append(line)
-    for key, value in updates.items():
-        if key not in seen:
-            new_lines.append(f"{key}={value}")
-    out_path = APP_BACKEND_ENV
-    out_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-    print(f"wrote {out_path}", flush=True)
+    # Host backend (cargo run)
+    _upsert_dotenv(APP_BACKEND_ENV, APP_BACKEND_ENV_EXAMPLE, {
+        **updates,
+        "EVM_RPC_URL": RETH_RPC,
+    })
+    # Docker compose backend (Scenario 3/4 app stack)
+    docker_updates = {
+        **updates,
+        "EVM_RPC_URL": os.environ.get("DOCKER_EVM_RPC_URL", "http://host.docker.internal:8545"),
+    }
+    _upsert_dotenv(APP_DOCKER_ENV, APP_DOCKER_ENV_EXAMPLE, docker_updates)
 
 
 def _write_bridge_config(bridge: str) -> None:

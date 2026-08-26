@@ -2,7 +2,7 @@
 """Deploy EVM MockUSDT + Bridge, init LightPool bridge, write cash/bridge env.
 
 Phases (so LightPool starts only once, with Link):
-  deploy — Reth only: deploy MockUSDT + Bridge, write .env.bridge + bridge-config.json
+  deploy — Reth + LightPool node: deploy MockUSDT + Bridge, write .env.bridge + bridge-config.json
   init   — LightPool running: init-bridge, fund maker LP USDT via Bridge.deposit, set CASH_TOKEN
   all    — deploy + init in one shot (requires LightPool already running)
 """
@@ -16,6 +16,8 @@ import re
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 from cli_utils import base_args, resolve_cli_binary
@@ -29,7 +31,7 @@ APP_BACKEND_ENV = REPO_ROOT / "event-contract-app" / "backend" / ".env"
 APP_BACKEND_ENV_EXAMPLE = REPO_ROOT / "event-contract-app" / "backend" / ".env.example"
 APP_DOCKER_ENV = REPO_ROOT / "event-contract-app" / "docker" / ".env"
 APP_DOCKER_ENV_EXAMPLE = REPO_ROOT / "event-contract-app" / "docker" / ".env.example"
-BRIDGE_CONFIG_JSON = REPO_ROOT / "tools" / "bridge-local" / "bridge-config.json"
+BRIDGE_CONFIG_JSON = BRIDGE_DIR / "bridge-config.json"
 
 RETH_RPC = os.environ.get("RETH_RPC", "http://127.0.0.1:8545")
 EVM_CHAIN_ID = os.environ.get("EVM_CHAIN_ID", "1337")
@@ -106,6 +108,51 @@ def _ensure_forge_std() -> None:
     _run(["forge", "install", "foundry-rs/forge-std"], cwd=CONTRACTS_DIR)
 
 
+def _fetch_validator_stake(validator_eth: str) -> str:
+    override = os.environ.get("VALIDATOR_STAKE", "").strip()
+    if override:
+        return override
+
+    body = json.dumps(
+        {"jsonrpc": "2.0", "method": "getCommitteeInfo", "params": [], "id": 1}
+    ).encode()
+    request = urllib.request.Request(
+        LP_RPC,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            payload = json.loads(response.read().decode())
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+        print(
+            f"warning: getCommitteeInfo failed ({error}); using VALIDATOR_STAKE=100",
+            flush=True,
+        )
+        return "100"
+
+    members = (payload.get("result") or {}).get("members") or []
+    target = validator_eth.lower()
+    for member in members:
+        owner = str(member.get("owner") or "").lower()
+        if owner == target and member.get("stake") is not None:
+            stake = str(member["stake"])
+            print(f"VALIDATOR_STAKE={stake} (from getCommitteeInfo)", flush=True)
+            return stake
+
+    if members and members[0].get("stake") is not None:
+        stake = str(members[0]["stake"])
+        print(
+            f"warning: owner {validator_eth} not in committee; using stake={stake}",
+            flush=True,
+        )
+        return stake
+
+    print("warning: empty committee; using VALIDATOR_STAKE=100", flush=True)
+    return "100"
+
+
 def _deploy_bridge(validator_eth: str) -> tuple[str, str]:
     _ensure_forge_std()
     output = _run(
@@ -123,6 +170,7 @@ def _deploy_bridge(validator_eth: str) -> tuple[str, str]:
         cwd=CONTRACTS_DIR,
         env={
             "VALIDATOR_ETH": validator_eth,
+            "VALIDATOR_STAKE": _fetch_validator_stake(validator_eth),
             "USER_ETH": USER_ETH,
         },
     )
@@ -181,10 +229,6 @@ def _init_bridge(eth_usdt: str) -> str:
         "Tether USD",
         "--symbol",
         "USDT",
-        "--epoch",
-        "0",
-        "--node-wallet",
-        NODE_WALLET,
     ]
     print(f"+ {' '.join(cmd)}", flush=True)
     out = subprocess.run(cmd, check=True, text=True, capture_output=True)

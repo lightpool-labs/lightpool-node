@@ -23,6 +23,9 @@ env.sh
 # Local CLI / doc demo data (wallets under data/recipient, etc.)
 /data/
 
+# Node runtime RocksDB store
+/store/
+
 # Venue docker runtime
 docker/.env
 docker/bin/lightpool

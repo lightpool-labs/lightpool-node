@@ -5,11 +5,11 @@ Cash collateral is **bridge LP USDT** from `init-bridge`, not the old `create-to
 ## Recommended order (start LightPool once)
 
 1. Start **Reth**.
-2. `python3 00_bridge_bootstrap.py --phase deploy` — deploy MockUSDT + Bridge; write `.env.bridge` and `tools/bridge-local/bridge-config.json`.
+2. `python3 00_bridge_bootstrap.py --phase deploy` — deploy MockUSDT + Bridge; write `.env.bridge` and `lightpool-bridge/bridge-config.json` (sibling repo).
 3. Start LightPool **once** with Link:
 
    ```bash
-   lightpool node --role validator --bridge-config ~/work/lightpool-labs/tools/bridge-local/bridge-config.json
+   lightpool node --role validator
    ```
 
 4. `python3 00_bridge_bootstrap.py --phase init` — `init-bridge`, set `CASH_TOKEN_ADDRESS` = LP USDT.

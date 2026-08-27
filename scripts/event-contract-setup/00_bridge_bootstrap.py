@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Deploy EVM MockUSDT + Bridge, init LightPool bridge, write cash/bridge env.
+"""Deploy EVM MockUSDT + Bridge, create inbound bridge on LightPool, write env.
 
-Phases (so LightPool starts only once, with Link):
-  deploy — Reth + LightPool node: deploy MockUSDT + Bridge, write .env.bridge + bridge-config.json
-  init   — LightPool running: init-bridge, fund maker LP USDT via Bridge.deposit, set CASH_TOKEN
-  all    — deploy + init in one shot (requires LightPool already running)
+Phases:
+  deploy — Reth + LightPool node not required for forge: MockUSDT + EVM Bridge,
+           write .env.bridge + empty bridge-config.json (routes via Admin UI)
+  create — LightPool node running: create first inbound bridge instance (CLI init-bridge),
+           write LP_USDT + INBOUND_BRIDGE to .env.bridge
+  fund   — After bridge process has an EVM route: maker Bridge.deposit on Reth,
+           wait for Link confirm_dep to credit LP USDT
+  all    — deploy + create (node must be up for create)
 """
 
 from __future__ import annotations
@@ -51,7 +55,7 @@ USER_ETH = os.environ.get(
 # Whole USDT (6 decimals applied when minting via DeployLocal / cast).
 MAKER_USDT_WHOLE = os.environ.get("MAKER_USDT_WHOLE", "1000000000000")  # 1e12
 USER_USDT_WHOLE = os.environ.get("USER_USDT_WHOLE", "10000")  # 10_000
-# Whole USDT deposited for maker via Bridge after init-bridge (Link mints LP USDT).
+# Whole USDT deposited for maker via Bridge after inbound bridge exists (Link confirm_dep).
 # Default covers liquidity-maker --bootstrap-markets (5 × ~1e9 mint) plus book inventory.
 MAKER_LP_DEPOSIT_WHOLE = os.environ.get("MAKER_LP_DEPOSIT_WHOLE", "10000000000")  # 1e10
 MAKER_LP_CREDIT_TIMEOUT_SECS = int(os.environ.get("MAKER_LP_CREDIT_TIMEOUT_SECS", "90"))
@@ -218,12 +222,13 @@ def _print_usdt_balance(eth_usdt: str, label: str, address: str) -> None:
         print(f"warning: balanceOf {address} failed: {error}", flush=True)
 
 
-def _init_bridge(eth_usdt: str) -> str:
+def _create_inbound_bridge(eth_usdt: str) -> tuple[str, str]:
+    """Run CLI init-bridge (sends inbound module create → instance 0x0600…0001)."""
     cmd = base_args() + [
         "init-bridge",
-        "--evm-chain-id",
+        "--foreign-chain-id",
         EVM_CHAIN_ID,
-        "--evm-token",
+        "--foreign-token",
         eth_usdt,
         "--name",
         "Tether USD",
@@ -234,17 +239,27 @@ def _init_bridge(eth_usdt: str) -> str:
     out = subprocess.run(cmd, check=True, text=True, capture_output=True)
     text = (out.stdout or "") + (out.stderr or "")
     print(text, flush=True)
-    labeled = re.search(
+    bridge_match = re.search(
+        r"Inbound bridge contract:\s*(0x06[0-9a-fA-F]{14})",
+        text,
+        flags=re.IGNORECASE,
+    )
+    token_match = re.search(
         r"LP USDT[^\n]*(0x02[0-9a-fA-F]{14})",
         text,
         flags=re.IGNORECASE,
     )
-    if labeled:
-        return labeled.group(1)
-    matches = re.findall(r"0x02[0-9a-fA-F]{14}", text, flags=re.IGNORECASE)
-    if matches:
-        return matches[-1]
-    raise RuntimeError("failed to parse LP USDT from init-bridge output")
+    lp_usdt = None
+    if token_match:
+        lp_usdt = token_match.group(1)
+    else:
+        tokens = re.findall(r"0x02[0-9a-fA-F]{14}", text, flags=re.IGNORECASE)
+        if tokens:
+            lp_usdt = tokens[-1]
+    if not lp_usdt:
+        raise RuntimeError("failed to parse LP USDT from create inbound bridge output")
+    inbound = bridge_match.group(1) if bridge_match else "0x0600000000000001"
+    return lp_usdt, inbound
 
 
 def _load_bridge_env() -> dict[str, str]:
@@ -283,8 +298,14 @@ def _upsert_dotenv(path: Path, example: Path, updates: dict[str, str]) -> None:
     print(f"wrote {path}", flush=True)
 
 
-def _write_env(eth_usdt: str, bridge: str, lp_usdt: str | None = None) -> None:
+def _write_env(
+    eth_usdt: str,
+    bridge: str,
+    lp_usdt: str | None = None,
+    inbound_bridge: str | None = None,
+) -> None:
     lp_value = lp_usdt or ""
+    inbound_value = inbound_bridge or ""
     content = (
         f"ETH_USDT={eth_usdt}\n"
         f"BRIDGE={bridge}\n"
@@ -293,6 +314,7 @@ def _write_env(eth_usdt: str, bridge: str, lp_usdt: str | None = None) -> None:
         f"CASH_TOKEN_ADDRESS={lp_value}\n"
         f"CASH_TOKEN_SYMBOL=USDT\n"
         f"LP_USDT={lp_value}\n"
+        f"INBOUND_BRIDGE={inbound_value}\n"
     )
     bridge_env = SETUP_DIR / ".env.bridge"
     bridge_env.write_text(content, encoding="utf-8")
@@ -306,6 +328,8 @@ def _write_env(eth_usdt: str, bridge: str, lp_usdt: str | None = None) -> None:
     if lp_usdt:
         os.environ["CASH_TOKEN_ADDRESS"] = lp_usdt
         os.environ["LP_USDT"] = lp_usdt
+    if inbound_bridge:
+        os.environ["INBOUND_BRIDGE"] = inbound_bridge
 
     updates = {
         "ETH_USDT": eth_usdt,
@@ -329,22 +353,19 @@ def _write_env(eth_usdt: str, bridge: str, lp_usdt: str | None = None) -> None:
     _upsert_dotenv(APP_DOCKER_ENV, APP_DOCKER_ENV_EXAMPLE, docker_updates)
 
 
-def _write_bridge_config(bridge: str) -> None:
+def _write_bridge_config() -> None:
     BRIDGE_CONFIG_JSON.parent.mkdir(parents=True, exist_ok=True)
-    content = (
-        "{\n"
-        '  "enabled": true,\n'
-        f'  "wallet_path": "{NODE_WALLET}",\n'
-        f'  "evm_rpc_url": "{RETH_RPC}",\n'
-        f'  "evm_bridge_address": "{bridge}",\n'
-        '  "evm_confirmations": 1,\n'
-        f'  "lightpool_rpc_url": "{LP_RPC}",\n'
-        '  "poll_interval_ms": 1000,\n'
-        '  "dispute_period_seconds": 5,\n'
-        '  "start_block": 0\n'
-        "}\n"
-    )
-    BRIDGE_CONFIG_JSON.write_text(content, encoding="utf-8")
+    content = {
+        "enabled": True,
+        "wallet_path": NODE_WALLET,
+        "lightpool_rpc_url": LP_RPC,
+        "poll_interval_ms": 1000,
+        "dispute_period_seconds": 5,
+        "cast_bin": "cast",
+        "local": {"rpc_url": LP_RPC, "chain_id": 1},
+        "routes": [],
+    }
+    BRIDGE_CONFIG_JSON.write_text(json.dumps(content, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {BRIDGE_CONFIG_JSON}", flush=True)
 
 
@@ -371,14 +392,12 @@ def _phase_deploy() -> None:
     _print_usdt_balance(eth_usdt, "validator/maker", validator_eth)
     _print_usdt_balance(eth_usdt, "user", USER_ETH)
 
-    _write_env(eth_usdt, bridge, lp_usdt=None)
-    _write_bridge_config(bridge)
+    _write_env(eth_usdt, bridge, lp_usdt=None, inbound_bridge=None)
+    _write_bridge_config()
     print(
-        "Deploy phase done. Start LightPool, then the bridge process:\n"
-        "  lightpool node --role validator\n"
-        f"  cargo run --release --manifest-path {REPO_ROOT / 'lightpool-bridge' / 'Cargo.toml'} "
-        f"-- --config {BRIDGE_CONFIG_JSON}\n"
-        "Then run: python3 00_bridge_bootstrap.py --phase init",
+        "Deploy phase done. Start LightPool + lightpool-bridge, add an EVM route in Admin UI, then:\n"
+        "  python3 00_bridge_bootstrap.py --phase create\n"
+        "  python3 00_bridge_bootstrap.py --phase fund   # optional: credit maker LP USDT",
         flush=True,
     )
 
@@ -493,7 +512,7 @@ def _fund_maker_lp_usdt(eth_usdt: str, bridge: str, lp_usdt: str) -> None:
     _wait_maker_lp_balance(lp_usdt, maker, min_available_raw=amount_raw)
 
 
-def _phase_init() -> None:
+def _phase_create() -> None:
     values = _load_bridge_env()
     eth_usdt = values.get("ETH_USDT") or ""
     bridge = values.get("BRIDGE") or ""
@@ -501,28 +520,54 @@ def _phase_init() -> None:
         raise RuntimeError(".env.bridge missing ETH_USDT / BRIDGE; run --phase deploy first")
 
     existing_lp = (values.get("LP_USDT") or values.get("CASH_TOKEN_ADDRESS") or "").strip()
+    existing_inbound = (values.get("INBOUND_BRIDGE") or "").strip()
     try:
-        lp_usdt = _init_bridge(eth_usdt)
+        lp_usdt, inbound_bridge = _create_inbound_bridge(eth_usdt)
     except (RuntimeError, subprocess.CalledProcessError) as error:
         if existing_lp.lower().startswith("0x02") and len(existing_lp) >= 18:
             print(
-                f"init-bridge failed ({error}); reusing existing LP_USDT={existing_lp}",
+                f"create inbound bridge failed ({error}); reusing LP_USDT={existing_lp}",
                 flush=True,
             )
             lp_usdt = existing_lp
+            inbound_bridge = existing_inbound or "0x0600000000000001"
         else:
             raise
 
     print(f"LP_USDT={lp_usdt}", flush=True)
-    _write_env(eth_usdt, bridge, lp_usdt)
+    print(f"INBOUND_BRIDGE={inbound_bridge}", flush=True)
+    _write_env(eth_usdt, bridge, lp_usdt, inbound_bridge)
+
+    print(
+        "Create phase done. Add route in lightpool-bridge Admin UI using .env.bridge, "
+        "then run --phase fund to credit maker LP USDT via EVM deposit.",
+        flush=True,
+    )
+
+
+def _phase_fund() -> None:
+    values = _load_bridge_env()
+    eth_usdt = values.get("ETH_USDT") or ""
+    bridge = values.get("BRIDGE") or ""
+    lp_usdt = (values.get("LP_USDT") or values.get("CASH_TOKEN_ADDRESS") or "").strip()
+    if not eth_usdt or not bridge or not lp_usdt:
+        raise RuntimeError(
+            ".env.bridge missing ETH_USDT / BRIDGE / LP_USDT; run --phase create first"
+        )
 
     _fund_maker_lp_usdt(eth_usdt, bridge, lp_usdt)
 
     print(
-        "Init phase done. CASH_TOKEN_ADDRESS is bridge LP USDT; "
-        "maker already holds LP USDT from Bridge.deposit + Link confirm_dep. "
-        "liquidity-maker --bootstrap-markets can mint without Balance object not found.",
+        "Fund phase done. CASH_TOKEN_ADDRESS is bridge LP USDT; "
+        "maker holds LP USDT from Bridge.deposit + Link confirm_dep.",
         flush=True,
+    )
+
+
+def _phase_init() -> None:
+    raise RuntimeError(
+        "--phase init was removed; use --phase create (inbound bridge) "
+        "and --phase fund (maker EVM deposit) instead"
     )
 
 
@@ -535,11 +580,15 @@ def run(phase: str = "all") -> int:
 
         if phase == "deploy":
             _phase_deploy()
+        elif phase == "create":
+            _phase_create()
+        elif phase == "fund":
+            _phase_fund()
         elif phase == "init":
             _phase_init()
         elif phase == "all":
             _phase_deploy()
-            _phase_init()
+            _phase_create()
         else:
             raise RuntimeError(f"unknown phase: {phase}")
         return 0
@@ -562,9 +611,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Bridge bootstrap for event-contract setup")
     parser.add_argument(
         "--phase",
-        choices=("deploy", "init", "all"),
+        choices=("deploy", "create", "fund", "all", "init"),
         default=os.environ.get("BRIDGE_BOOTSTRAP_PHASE", "all"),
-        help="deploy=Reth only; init=init-bridge after node+Link up; all=both (node must be up)",
+        help=(
+            "deploy=Reth contracts only; create=inbound bridge on LP; "
+            "fund=maker EVM deposit (needs bridge route); all=deploy+create; "
+            "init=removed (error)"
+        ),
     )
     args = parser.parse_args()
     return run(args.phase)

@@ -84,13 +84,14 @@ cd "$LABS/lightpool-bridge"
 ./target/release/lightpool-bridge --config "$LABS/tools/bridge-local/bridge-config.json"
 ```
 
-## Terminal 1 — init + balance + app
+## Terminal 1 — create + fund + app
 
 ```bash
 cd "$LABS/lightpool-node"
 source ./env.sh
 cd "$LABS/lightpool-node/scripts/event-contract-setup"
-MAKER_LP_DEPOSIT_WHOLE="$MAKER_LP_DEPOSIT_WHOLE" python3 00_bridge_bootstrap.py --phase init
+python3 00_bridge_bootstrap.py --phase create
+MAKER_LP_DEPOSIT_WHOLE="$MAKER_LP_DEPOSIT_WHOLE" python3 00_bridge_bootstrap.py --phase fund
 ```
 
 ```bash

@@ -42,7 +42,7 @@ def main() -> int:
     print("\nAll sample steps completed.", flush=True)
     print(
         "Preferred local order: --phase deploy → start lightpool once with "
-        "--bridge-config → --phase init (see doc/frontend-bridge-deposit-withdraw.md).",
+        "--bridge-config → --phase create (see doc/frontend-bridge-deposit-withdraw.md).",
         flush=True,
     )
     return 0

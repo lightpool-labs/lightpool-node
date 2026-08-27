@@ -25,6 +25,7 @@ env.sh
 
 # Node runtime RocksDB store
 /store/
+/store-foreign/
 
 # Venue docker runtime
 docker/.env

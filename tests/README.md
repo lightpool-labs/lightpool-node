@@ -17,6 +17,15 @@ python3 tests/scenario1_single_node.py
 | --- | --- | --- |
 | `scenario1_single_node.py` | Single-node product path: create token -> spot market -> fund taker -> resting sell -> IOC fill -> maker cancel -> balance/book assertions | Daily |
 | `scenario2_two_nodes.py` | Two-node consensus + staking: pending-member checkpoint sync -> bond/register/allocate -> dual proposals -> tip/hash match -> mid-run restart catch-up | Weekly / sync/epoch changes |
+| `scenario3_four_nodes.py` | Four-node committee: node0 genesis + node1–3 join -> 4-member committee -> stop/restart one node (quorum still live) | Release L3 |
+
+Scenario 3 notes:
+
+- Ports: node0 26000–26400, node1 27000–27400, node2 28000–28400, node3 29000–29400
+  (`scripts/run_2nodes/lib/config.py` `PORT_STEP`).
+- Data dir: `tests/.scenario3/` (wiped on every run).
+- With n=4 / f=1 the chain must keep advancing while one validator is down.
+- Release gate: `python3 tools/release/0.4.0/l3_scenario3_4_nodes.py`
 
 Scenario 2 notes:
 

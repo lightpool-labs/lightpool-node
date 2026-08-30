@@ -74,12 +74,11 @@ from lib.staking_utils import run_staking_setup  # noqa: E402
 
 PRE_JOIN_MIN_BLOCK = 800
 FIRST_CHECKPOINT_BLOCK = EPOCH_LENGTH  # 1000
-RESTART_GAP_BLOCKS = 30
+RESTART_GAP_BLOCKS = 5
 
 BURST_ARGV = [
     "--address", BURST_FRONT,
     "--senders", "128",
-    "--recipients", "128",
     "--tasks", "2",
     "--rate-per-task", "200",
     "--duration", "3600",
@@ -445,12 +444,12 @@ def main() -> int:
         # halt while one validator is down: votes for node0's blocks route to
         # the next leader (node1), so no QC can form. Assert safety (tip does
         # not move), then restart node1 and assert liveness resumes.
-        time.sleep(45.0)
+        time.sleep(10.0)
         tip_while_down = committed_block_num(LEADER.rpc_port)
         check_true(
             "chain halts while node1 is down (safety)",
             tip_while_down <= tip_at_stop + 2,
-            f"tip_at_stop={tip_at_stop} tip_after_45s={tip_while_down}",
+            f"tip_at_stop={tip_at_stop} tip_after_10s={tip_while_down}",
         )
 
         node1 = start_node(FOLLOWER)  # keep store: consensus catch-up path

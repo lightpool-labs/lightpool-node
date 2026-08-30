@@ -26,8 +26,6 @@ def main() -> None:
         BURST_FRONT,
         "--senders",
         "128",
-        "--recipients",
-        "128",
         "--tasks",
         "2",
         "--rate-per-task",

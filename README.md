@@ -1,6 +1,6 @@
 # lightpool-node
 
-Trading and payments on a Layer 1 blockchain — target **200k TPS** on the orderbook and **400k TPS** on payments. Inspired by Bitcoin, EOS, Solana, Sui, Aptos, and Hyperliquid. Approaching production; not production-ready yet.
+Trading and payments on a Layer 1 blockchain — target **200k TPS** on the orderbook and **400k TPS** on payments. Inspired by Bitcoin, EOS, Solana, Sui, Aptos, and Hyperliquid. For education purposes only; do not use for production deployment.
 
 ## Setup
 

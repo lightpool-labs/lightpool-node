@@ -3,10 +3,11 @@
 
 Phases:
   deploy — Reth + LightPool node not required for forge: MockUSDT + EVM Bridge,
-           write .env.bridge + empty bridge-config.json (routes via Admin UI)
+           write .env.bridge + empty bridge-config.json
   create — LightPool node running: create first inbound bridge instance (CLI init-bridge),
-           write LP_USDT + INBOUND_BRIDGE to .env.bridge
-  fund   — After bridge process has an EVM route: maker Bridge.deposit on Reth,
+           write LP_USDT + INBOUND_BRIDGE to .env.bridge and upsert reth-usdt route
+           in lightpool-bridge/bridge-config.json (hot-reload via Admin API if up)
+  fund   — After bridge process has the USDT route: maker Bridge.deposit on Reth,
            wait for Link confirm_dep to credit LP USDT
   all    — deploy + create (node must be up for create)
 """
@@ -36,6 +37,8 @@ APP_BACKEND_ENV_EXAMPLE = REPO_ROOT / "event-contract-app" / "backend" / ".env.e
 APP_DOCKER_ENV = REPO_ROOT / "event-contract-app" / "docker" / ".env"
 APP_DOCKER_ENV_EXAMPLE = REPO_ROOT / "event-contract-app" / "docker" / ".env.example"
 BRIDGE_CONFIG_JSON = BRIDGE_DIR / "bridge-config.json"
+USDT_ROUTE_ID = "reth-usdt"
+BRIDGE_ADMIN_URL = os.environ.get("BRIDGE_ADMIN_URL", "http://127.0.0.1:8787").rstrip("/")
 
 RETH_RPC = os.environ.get("RETH_RPC", "http://127.0.0.1:8545")
 EVM_CHAIN_ID = os.environ.get("EVM_CHAIN_ID", "1337")
@@ -353,9 +356,8 @@ def _write_env(
     _upsert_dotenv(APP_DOCKER_ENV, APP_DOCKER_ENV_EXAMPLE, docker_updates)
 
 
-def _write_bridge_config() -> None:
-    BRIDGE_CONFIG_JSON.parent.mkdir(parents=True, exist_ok=True)
-    content = {
+def _empty_bridge_config() -> dict:
+    return {
         "enabled": True,
         "wallet_path": NODE_WALLET,
         "lightpool_rpc_url": LP_RPC,
@@ -365,8 +367,113 @@ def _write_bridge_config() -> None:
         "local": {"rpc_url": LP_RPC, "chain_id": 1},
         "routes": [],
     }
+
+
+def _write_bridge_config() -> None:
+    BRIDGE_CONFIG_JSON.parent.mkdir(parents=True, exist_ok=True)
+    content = _empty_bridge_config()
     BRIDGE_CONFIG_JSON.write_text(json.dumps(content, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {BRIDGE_CONFIG_JSON}", flush=True)
+
+
+def _usdt_evm_route(
+    eth_usdt: str,
+    bridge: str,
+    lp_usdt: str,
+    inbound_bridge: str,
+) -> dict:
+    return {
+        "id": USDT_ROUTE_ID,
+        "enabled": True,
+        "local_inbound": {
+            "bridge_contract": inbound_bridge,
+            "lp_token": lp_usdt,
+        },
+        "foreign": {
+            "kind": "evm",
+            "rpc_url": RETH_RPC,
+            "chain_id": int(EVM_CHAIN_ID),
+            "bridge_address": bridge,
+            "token_address": eth_usdt,
+            "confirmations": 1,
+            "start_block": 0,
+        },
+    }
+
+
+def _load_bridge_config_json() -> dict:
+    if not BRIDGE_CONFIG_JSON.is_file():
+        return _empty_bridge_config()
+    try:
+        data = json.loads(BRIDGE_CONFIG_JSON.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return _empty_bridge_config()
+    if not isinstance(data, dict):
+        return _empty_bridge_config()
+    data.setdefault("wallet_path", NODE_WALLET)
+    data.setdefault("lightpool_rpc_url", LP_RPC)
+    data.setdefault("cast_bin", "cast")
+    data.setdefault("local", {"rpc_url": LP_RPC, "chain_id": 1})
+    if not isinstance(data.get("routes"), list):
+        data["routes"] = []
+    return data
+
+
+def _upsert_usdt_route_in_config(
+    eth_usdt: str,
+    bridge: str,
+    lp_usdt: str,
+    inbound_bridge: str,
+) -> dict:
+    """Write reth-usdt into bridge-config.json; return the route object."""
+    route = _usdt_evm_route(eth_usdt, bridge, lp_usdt, inbound_bridge)
+    config = _load_bridge_config_json()
+    routes = [r for r in config["routes"] if not (isinstance(r, dict) and r.get("id") == USDT_ROUTE_ID)]
+    routes.append(route)
+    config["routes"] = routes
+    BRIDGE_CONFIG_JSON.parent.mkdir(parents=True, exist_ok=True)
+    BRIDGE_CONFIG_JSON.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    print(f"wrote {USDT_ROUTE_ID} route → {BRIDGE_CONFIG_JSON}", flush=True)
+    return route
+
+
+def _push_usdt_route_to_admin(route: dict) -> bool:
+    """Hot-reload route into a running lightpool-bridge Admin UI. Returns True on success."""
+    body = json.dumps(route).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    try:
+        # Prefer update when route already exists; else create.
+        update_req = urllib.request.Request(
+            f"{BRIDGE_ADMIN_URL}/api/routes/{USDT_ROUTE_ID}",
+            data=body,
+            headers=headers,
+            method="PUT",
+        )
+        try:
+            with urllib.request.urlopen(update_req, timeout=3) as resp:
+                resp.read()
+            print(f"updated {USDT_ROUTE_ID} on {BRIDGE_ADMIN_URL}", flush=True)
+            return True
+        except urllib.error.HTTPError as err:
+            if err.code != 404:
+                raise
+        create_req = urllib.request.Request(
+            f"{BRIDGE_ADMIN_URL}/api/routes",
+            data=body,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(create_req, timeout=3) as resp:
+            resp.read()
+        print(f"created {USDT_ROUTE_ID} on {BRIDGE_ADMIN_URL}", flush=True)
+        return True
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError) as err:
+        print(
+            f"Admin UI not updated ({err}); start or restart lightpool-bridge with "
+            f"--config {BRIDGE_CONFIG_JSON} to load {USDT_ROUTE_ID}",
+            flush=True,
+        )
+        return False
 
 
 def _phase_deploy() -> None:
@@ -395,9 +502,9 @@ def _phase_deploy() -> None:
     _write_env(eth_usdt, bridge, lp_usdt=None, inbound_bridge=None)
     _write_bridge_config()
     print(
-        "Deploy phase done. Start LightPool + lightpool-bridge, add an EVM route in Admin UI, then:\n"
-        "  python3 00_bridge_bootstrap.py --phase create\n"
-        "  python3 00_bridge_bootstrap.py --phase fund   # optional: credit maker LP USDT",
+        "Deploy phase done. Start LightPool + lightpool-bridge, then:\n"
+        "  python3 00_bridge_bootstrap.py --phase create   # also writes reth-usdt route\n"
+        "  python3 00_bridge_bootstrap.py --phase fund     # optional: credit maker LP USDT",
         flush=True,
     )
 
@@ -500,7 +607,8 @@ def _fund_maker_lp_usdt(eth_usdt: str, bridge: str, lp_usdt: str) -> None:
             "cast",
             "send",
             bridge,
-            "deposit(uint64,address)",
+            "deposit(address,uint64,address)",
+            eth_usdt,
             str(amount_raw),
             maker,
             "--rpc-url",
@@ -538,9 +646,13 @@ def _phase_create() -> None:
     print(f"INBOUND_BRIDGE={inbound_bridge}", flush=True)
     _write_env(eth_usdt, bridge, lp_usdt, inbound_bridge)
 
+    route = _upsert_usdt_route_in_config(eth_usdt, bridge, lp_usdt, inbound_bridge)
+    _push_usdt_route_to_admin(route)
+
     print(
-        "Create phase done. Add route in lightpool-bridge Admin UI using .env.bridge, "
-        "then run --phase fund to credit maker LP USDT via EVM deposit.",
+        "Create phase done. USDT route id=reth-usdt is in bridge-config.json "
+        "(and Admin UI if bridge was running). "
+        "Run --phase fund to credit maker LP USDT via EVM deposit.",
         flush=True,
     )
 

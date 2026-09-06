@@ -25,7 +25,7 @@ Scenario 3 notes:
   (`scripts/run_2nodes/lib/config.py` `PORT_STEP`).
 - Data dir: `tests/.scenario3/` (wiped on every run).
 - With n=4 / f=1 the chain must keep advancing while one validator is down.
-- Release gate: `python3 tools/release/0.4.0/l3_scenario3_4_nodes.py`
+- Release gate: `python3 tests/scenario3_four_nodes.py` (LightPool stack **0.5.0**)
 
 Scenario 2 notes:
 

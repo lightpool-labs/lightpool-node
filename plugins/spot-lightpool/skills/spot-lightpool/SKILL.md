@@ -44,9 +44,10 @@ as described in [tx-submit.md](tx-submit.md).
 App ──HTTP/WS──► clob-index (:3002) ──► lightpool node
 ```
 
-1. Discover markets / spot info → [http.md](http.md)  
-2. Stream books / quotes / user → [ws.md](ws.md)  
-3. Sign with SDK, submit → [tx-submit.md](tx-submit.md)
+1. Discover markets (`GET /api/markets/spot`) / spot info → [http.md](http.md)  
+2. Open orders / order history / trade history → [http.md](http.md) (Orders + `GET /api/markets/:name/trades`)  
+3. Stream books / quotes / user → [ws.md](ws.md)  
+4. Sign with SDK, submit → [tx-submit.md](tx-submit.md)
 
 ## Critical types
 

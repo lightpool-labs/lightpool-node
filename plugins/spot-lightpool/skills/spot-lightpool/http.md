@@ -43,11 +43,25 @@ Amounts/prices in responses are usually **decimal strings** (human-readable scal
 
 `status` is `"ready"` or `"degraded"`.
 
+### `GET /api/health/client_version`
+
+**Input:** none  
+
+**Output:**
+
+```json
+{ "client_version": "lightpool-clob-indexer/<semver>" }
+```
+
 ---
 
 ## Markets
 
+`Market` is a **tagged** JSON object (`serde` tag `category`): `spot` | `event` | `perp`.
+
 ### `GET /api/markets`
+
+List markets (all categories unless filtered).
 
 **Input (query):**
 
@@ -55,45 +69,119 @@ Amounts/prices in responses are usually **decimal strings** (human-readable scal
 |-------|------|--------|
 | `limit` | u32 | default 100, max 100 |
 | `offset` | u32 | default 0 |
-| `slug` | string | optional single slug |
+| `slug` | string | optional single slug (events) |
 | `slugs` | string | optional CSV, max 100 |
 | `market_ids` | string | optional CSV of UUIDs, max 100 |
 | `market_addresses` | string | optional CSV, max 100 |
 | `state` | string | optional filter |
-| `order` | string | `slug` \| `question` \| default resolution deadline |
-| `ascending` | bool | optional |
+| `category` | string | optional `spot` \| `event` \| `perp` |
+| `deployer` | string | optional deployer address filter |
+| `order` | string | `slug`/`name` \| `question`/`label` \| default resolution deadline |
+| `ascending` | bool | default true |
 
 **Output:**
 
 ```json
 {
-  "markets": [
-    {
-      "id": "<uuid>",
-      "slug": "<string>",
-      "question": "<string>",
-      "icon_url": "<string|omit>",
-      "market_address": "<ContractAddress hex>",
-      "collateral_token": "<ContractAddress hex>",
-      "yes_token": "<ContractAddress hex>",
-      "no_token": "<ContractAddress hex>",
-      "yes_spot_market": "<ContractAddress hex>",
-      "no_spot_market": "<ContractAddress hex>",
-      "state": "<string>",
-      "resolution_deadline": 0
-    }
-  ],
+  "markets": [ /* Market objects */ ],
   "total": 0,
   "limit": 100,
   "offset": 0
 }
 ```
 
+**Spot market** (`category: "spot"`) — preferred for spot apps:
+
+```json
+{
+  "category": "spot",
+  "id": "<uuid>",
+  "name": "AAPL/USDT",
+  "icon_url": "<string|omit>",
+  "market_address": "<spot ContractAddress hex 0x03…>",
+  "state": "<string>",
+  "deployer": "<Address hex>",
+  "base_token": "<token ContractAddress hex>",
+  "quote_token": "<token ContractAddress hex>"
+}
+```
+
+**Event market** (`category: "event"`):
+
+```json
+{
+  "category": "event",
+  "id": "<uuid>",
+  "slug": "<string>",
+  "question": "<string>",
+  "icon_url": "<string|omit>",
+  "market_address": "<ContractAddress hex>",
+  "collateral_token": "<ContractAddress hex>",
+  "yes_token": "<ContractAddress hex>",
+  "no_token": "<ContractAddress hex>",
+  "yes_spot_market": "<ContractAddress hex>",
+  "no_spot_market": "<ContractAddress hex>",
+  "state": "<string>",
+  "resolution_deadline": 0,
+  "deployer": "<Address hex>"
+}
+```
+
+**Perp market** (`category: "perp"`):
+
+```json
+{
+  "category": "perp",
+  "id": "<uuid>",
+  "name": "<string>",
+  "icon_url": "<string|omit>",
+  "market_address": "<ContractAddress hex>",
+  "state": "<string>",
+  "deployer": "<Address hex>",
+  "underlying": "<string>"
+}
+```
+
+### `GET /api/markets/spot` / `GET /api/markets/event` / `GET /api/markets/perp`
+
+Same query params and page shape as `GET /api/markets`, but category is fixed by the path (no need for `category=`).
+
+For spot UIs prefer **`GET /api/markets/spot`**.
+
 ### `GET /api/markets/slug/:slug`
 
-**Input:** path `slug`  
+**Input:** path `slug` (event markets)  
 
-**Output:** one `Market` object (same fields as an element of `markets` above).
+**Output:** one event `Market` object (`category: "event"`).
+
+### `GET /api/markets/:name/book`
+
+Book by spot **name** (`AAPL`, `AAPL/USDT`) or spot `ContractAddress` hex.
+
+Same payload as `GET /api/spot/:spot_market/book`. Query: `depth` (default 10).
+
+### `GET /api/markets/:name/trades`
+
+**Trade history** (recent public trades for that spot), by name or spot address.
+
+**Output:**
+
+```json
+[
+  {
+    "id": 0,
+    "side": "buy|sell",
+    "price": "<string>",
+    "size": "<string>",
+    "time_ms": 0,
+    "block_num": 0
+  }
+]
+```
+
+### `GET /api/markets/index/position-token-specs`
+
+**Output:** `[{ "symbol": "<string>", "address": "<ContractAddress hex>" }, …]` (YES/NO position tokens for balances UI).
 
 ---
 
@@ -119,6 +207,8 @@ Amounts/prices in responses are usually **decimal strings** (human-readable scal
   "last_trade_price": "<string|omit>"
 }
 ```
+
+Prefer `GET /api/markets/:name/book` when the UI has a ticker/name instead of the hex address.
 
 ### `GET /api/spot/:spot_market/info`
 
@@ -229,7 +319,9 @@ Amounts/prices in responses are usually **decimal strings** (human-readable scal
 
 ## Orders
 
-### `GET /api/orders`
+### `GET /api/orders` / `GET /api/orders/openOrders`
+
+**Open orders** (hot in-memory index: `open` / `partial_filled`).
 
 **Input (query):**
 
@@ -237,7 +329,7 @@ Amounts/prices in responses are usually **decimal strings** (human-readable scal
 |-------|------|--------|
 | `user_address` | string | **required** |
 
-**Output:** array of listed orders:
+**Output:** array of listed orders (Order fields flattened + extras):
 
 ```json
 [
@@ -251,6 +343,7 @@ Amounts/prices in responses are usually **decimal strings** (human-readable scal
     "price": "<string>",
     "size": "<string>",
     "status": "<string>",
+    "cloid": "<string|omit>",
     "chain_order_id": "<string>",
     "spot_market": "<ContractAddress hex>",
     "user_address": "<Address hex>",
@@ -260,6 +353,26 @@ Amounts/prices in responses are usually **decimal strings** (human-readable scal
 ]
 ```
 
+### `GET /api/orders/historicalOrders`
+
+**Order history** (sqlite archive: filled, cancelled, …), newest first (capped, e.g. 2000).
+
+**Input (query):**
+
+| Param | Type | Notes |
+|-------|------|--------|
+| `user_address` | string | **required** |
+
+**Output:** same listed-order array shape as open orders. Empty if persist is disabled.
+
+### Trade history
+
+| Need | Endpoint |
+|------|----------|
+| Public recent trades for a market | `GET /api/markets/:name/trades` |
+| User fill stream (live) | WS `user` channel messages with `"type": "trade"` (see [ws.md](ws.md)) |
+| User fills from history | `GET /api/orders/historicalOrders` and filter rows with `filled_raw > 0` |
+
 ### `GET /api/orders/query`
 
 **Input (query)** — one of:
@@ -267,19 +380,22 @@ Amounts/prices in responses are usually **decimal strings** (human-readable scal
 1. By chain id: `spot_market` + `chain_order_id` (+ optional `user_address`)  
 2. By open match: `spot_market` + `user_address` + `side` + `price` + `size_raw`
 
-**Output:**
+**Output:** nested shape (not flattened):
 
 ```json
 {
-  "id": "<uuid>",
-  "market_id": "<uuid>",
-  "market_slug": "<string>",
-  "question": "<string>",
-  "outcome": "<string>",
-  "side": "<string>",
-  "price": "<string>",
-  "size": "<string>",
-  "status": "<string>",
+  "order": {
+    "id": "<uuid>",
+    "market_id": "<uuid>",
+    "market_slug": "<string>",
+    "question": "<string>",
+    "outcome": "<string>",
+    "side": "<string>",
+    "price": "<string>",
+    "size": "<string>",
+    "status": "<string>",
+    "cloid": "<string|omit>"
+  },
   "chain_order_id": "<string>",
   "spot_market": "<string>",
   "user_address": "<string>",
